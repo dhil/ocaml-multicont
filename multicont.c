@@ -1,5 +1,7 @@
 #define CAML_INTERNALS
 
+#include <stdio.h>
+
 #include <caml/mlvalues.h>
 #include <caml/fail.h>
 #include <caml/alloc.h>
@@ -8,10 +10,10 @@
 #include <caml/memory.h>
 #include <caml/callback.h>
 
-#ifdef NATIVE_CODE
+//#ifdef NATIVE_CODE
 #include <caml/stack.h>
-#include <frame_descriptors.h>
-#endif
+#include <caml/frame_descriptors.h>
+//#endif
 
 #include "fiber_primitives.h"
 
@@ -31,6 +33,7 @@ value multicont_promote(value k) {
   value null_stk = Val_ptr(NULL);
 
   r = caml_alloc_1(Cont_tag, null_stk);
+  CAMLnoalloc;
   caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
 
   CAMLreturn(r);
@@ -43,6 +46,7 @@ value multicont_demote(value r) {
   value null_stk = Val_ptr(NULL);
 
   k = caml_alloc_1(Cont_tag, null_stk);
+  CAMLnoalloc;
   caml_continuation_replace(k, Ptr_val(caml_continuation_use(r)));
 
   CAMLreturn(k);
@@ -64,20 +68,24 @@ value multicont_clone_continuation(value k) {
   // Allocate an OCaml object with the continuation tag
   kclone = caml_alloc_1(Cont_tag, null_stk);
 
+  CAMLnoalloc;
+
   // Retrieve the stack pointed to by the continuation [k]
+  //printf("HERE\n");
   source = current = Ptr_val(caml_continuation_use(k));
+  //printf("THERE\n");
 
   // Copy each stack segment in the chain
   while (current != NULL) {
-    CAMLnoalloc;
     stack_used = Stack_high(current) - (value*)current->sp;
 
+    //printf("BEFORE alloc\n");
     // Allocate a fresh stack segment the size of [current]
     clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
                                         Stack_handle_value(current),
                                         Stack_handle_exception(current),
                                         Stack_handle_effect(current));
-
+    //printf("AFTER alloc\n");
     // Check whether allocation failed
     if (!clone) caml_raise_out_of_memory();
 
@@ -86,11 +94,13 @@ value multicont_clone_continuation(value k) {
            Stack_high(current) - stack_used,
            stack_used * sizeof(value));
 
-#ifdef NATIVE_CODE
+    //#ifdef NATIVE_CODE
+    //printf("BEFORE EXN\n");
     // Rewrite exception pointer on the new stack segment
     clone->exception_ptr = current->exception_ptr;
-    rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
-#endif
+    multicont_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
+    //printf("AFTER EXN\n");
+    //#endif
 
     // Set stack pointer on [clone]
     clone->sp = Stack_high(clone) - stack_used;
@@ -104,8 +114,11 @@ value multicont_clone_continuation(value k) {
   // Reattach the [source] stack to [k] (necessary as
   // [caml_continuation_use] deattaches it) and attach [result] to
   // [kclone]
+  //printf("replace (1)\n");
   caml_continuation_replace(k, source);
+  //printf("replace (2)\n");
   caml_continuation_replace(kclone, result);
+  //printf("after replace\n");
 
   CAMLreturn(kclone);
 }

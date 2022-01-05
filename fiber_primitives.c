@@ -107,3 +107,34 @@ struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval,
   struct stack_info** size_bucket = stack_cache_bucket(wosize);
   return alloc_size_class_stack_noexc(wosize, size_bucket, hval, hexn, heff);
 }
+
+
+//#ifdef NATIVE_CODE
+/* Update absolute exception pointers for new stack*/
+void multicont_rewrite_exception_stack(struct stack_info *old_stack,
+                                       value** exn_ptr, struct stack_info *new_stack) {
+  /* fiber_debug_log("Old [%p, %p]", Stack_base(old_stack), Stack_high(old_stack)); */
+  /* fiber_debug_log("New [%p, %p]", Stack_base(new_stack), Stack_high(new_stack)); */
+  if(exn_ptr) {
+    /* fiber_debug_log ("*exn_ptr=%p", *exn_ptr); */
+
+    while (Stack_base(old_stack) < *exn_ptr &&
+           *exn_ptr <= Stack_high(old_stack)) {
+#ifdef DEBUG
+      value* old_val = *exn_ptr;
+#endif
+      *exn_ptr = Stack_high(new_stack) - (Stack_high(old_stack) - *exn_ptr);
+
+      /* fiber_debug_log ("Rewriting %p to %p", old_val, *exn_ptr); */
+
+      CAMLassert(Stack_base(new_stack) < *exn_ptr);
+      CAMLassert((value*)*exn_ptr <= Stack_high(new_stack));
+
+      exn_ptr = (value**)*exn_ptr;
+    }
+    /* fiber_debug_log ("finished with *exn_ptr=%p", *exn_ptr); */
+  } else {
+    /* fiber_debug_log ("exn_ptr is null"); */
+  }
+}
+//#endif
