@@ -1,7 +1,5 @@
 #define CAML_INTERNALS
 
-#include <stdio.h>
-
 #include <caml/mlvalues.h> // provides basic CAML macros and type definitions
 #include <caml/fail.h>     // provides [caml_raise_out_of_memory]
 #include <caml/alloc.h>    // provides [caml_alloc_1]
@@ -9,6 +7,7 @@
 #include <caml/memory.h>   // provides CAMLparam* and CAMLreturn* macros
 #include <caml/misc.h>     // provides [CAMLnoalloc] macro
 
+// TODO FIXME: the following includes are only meaningful for native mode
 //#ifdef NATIVE_CODE
 #include <caml/stack.h>
 #include <caml/frame_descriptors.h>
