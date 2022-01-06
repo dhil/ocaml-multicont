@@ -33,8 +33,11 @@ value multicont_promote(value k) {
   value null_stk = Val_ptr(NULL);
 
   r = caml_alloc_1(Cont_tag, null_stk);
-  CAMLnoalloc;
-  caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
+
+  {
+    CAMLnoalloc;
+    caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
+  }
 
   CAMLreturn(r);
 }
@@ -46,8 +49,10 @@ value multicont_demote(value r) {
   value null_stk = Val_ptr(NULL);
 
   k = caml_alloc_1(Cont_tag, null_stk);
-  CAMLnoalloc;
-  caml_continuation_replace(k, Ptr_val(caml_continuation_use(r)));
+  {
+    CAMLnoalloc;
+    caml_continuation_replace(k, Ptr_val(caml_continuation_use(r)));
+  }
 
   CAMLreturn(k);
 }
@@ -67,58 +72,53 @@ value multicont_clone_continuation(value k) {
 
   // Allocate an OCaml object with the continuation tag
   kclone = caml_alloc_1(Cont_tag, null_stk);
+  {
+    // Prevent the GC from running between the use of
+    // [caml_continuation_use] and [caml_continuation_replace]
+    CAMLnoalloc;
 
-  CAMLnoalloc;
+    // Retrieve the stack pointed to by the continuation [k]
+    source = current = Ptr_val(caml_continuation_use(k));
 
-  // Retrieve the stack pointed to by the continuation [k]
-  //printf("HERE\n");
-  source = current = Ptr_val(caml_continuation_use(k));
-  //printf("THERE\n");
+    // Copy each stack segment in the chain
+    while (current != NULL) {
+      stack_used = Stack_high(current) - (value*)current->sp;
 
-  // Copy each stack segment in the chain
-  while (current != NULL) {
-    stack_used = Stack_high(current) - (value*)current->sp;
+      // Allocate a fresh stack segment the size of [current]
+      clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
+                                          Stack_handle_value(current),
+                                          Stack_handle_exception(current),
+                                          Stack_handle_effect(current));
+      // Check whether allocation failed
+      if (!clone) caml_raise_out_of_memory();
 
-    //printf("BEFORE alloc\n");
-    // Allocate a fresh stack segment the size of [current]
-    clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
-                                        Stack_handle_value(current),
-                                        Stack_handle_exception(current),
-                                        Stack_handle_effect(current));
-    //printf("AFTER alloc\n");
-    // Check whether allocation failed
-    if (!clone) caml_raise_out_of_memory();
+      // Copy the contents of [current] onto [clone]
+      memcpy(Stack_high(clone) - stack_used,
+             Stack_high(current) - stack_used,
+             stack_used * sizeof(value));
 
-    // Copy the contents of [current] onto [clone]
-    memcpy(Stack_high(clone) - stack_used,
-           Stack_high(current) - stack_used,
-           stack_used * sizeof(value));
+      // TODO FIXME: this would be wrong in byte code mode.
+      //#ifdef NATIVE_CODE
+      // Rewrite exception pointer on the new stack segment
+      clone->exception_ptr = current->exception_ptr;
+      multicont_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
+      //#endif
 
-    //#ifdef NATIVE_CODE
-    //printf("BEFORE EXN\n");
-    // Rewrite exception pointer on the new stack segment
-    clone->exception_ptr = current->exception_ptr;
-    multicont_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
-    //printf("AFTER EXN\n");
-    //#endif
+      // Set stack pointer on [clone]
+      clone->sp = Stack_high(clone) - stack_used;
 
-    // Set stack pointer on [clone]
-    clone->sp = Stack_high(clone) - stack_used;
+      // Prepare to handle the next stack segment
+      *link = clone;
+      link = &Stack_parent(clone);
+      current = Stack_parent(current);
+    }
 
-    // Prepare to handle the next stack segment
-    *link = clone;
-    link = &Stack_parent(clone);
-    current = Stack_parent(current);
+    // Reattach the [source] stack to [k] (necessary as
+    // [caml_continuation_use] deattaches it) and attach [result] to
+    // [kclone]
+    caml_continuation_replace(k, source);
+    caml_continuation_replace(kclone, result);
   }
-
-  // Reattach the [source] stack to [k] (necessary as
-  // [caml_continuation_use] deattaches it) and attach [result] to
-  // [kclone]
-  //printf("replace (1)\n");
-  caml_continuation_replace(k, source);
-  //printf("replace (2)\n");
-  caml_continuation_replace(kclone, result);
-  //printf("after replace\n");
 
   CAMLreturn(kclone);
 }
