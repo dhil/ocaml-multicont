@@ -2,20 +2,22 @@
 
 #include <stdio.h>
 
-#include <caml/mlvalues.h>
-#include <caml/fail.h>
-#include <caml/alloc.h>
-#include <caml/fiber.h>
-#include <caml/gc_ctrl.h>
-#include <caml/memory.h>
-#include <caml/callback.h>
+#include <caml/mlvalues.h> // provides basic CAML macros and type definitions
+#include <caml/fail.h>     // provides [caml_raise_out_of_memory]
+#include <caml/alloc.h>    // provides [caml_alloc_1]
+#include <caml/fiber.h>    // provides Stack_* macros, [struct stack_info]
+#include <caml/memory.h>   // provides CAMLparam* and CAMLreturn* macros
+#include <caml/misc.h>     // provides [CAMLnoalloc] macro
 
 //#ifdef NATIVE_CODE
 #include <caml/stack.h>
 #include <caml/frame_descriptors.h>
 //#endif
 
-#include "fiber_primitives.h"
+#include "fiber_primitives.h" // provides copies of the hidden
+                              // [alloc_stack_noexc] and
+                              // [rewrite_exception_stack] functions
+                              // from [fiber.c]
 
 value multicont_is_null_continuation(value k) {
   CAMLparam1(k);
