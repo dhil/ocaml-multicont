@@ -138,7 +138,7 @@ the stack by a call to `continue`.
 
 ## Acknowledgements
 
-This library includes snippets of code that is originally written by
+This library includes snippets of code that are originally written by
 KC Sivaramakrishnan, Tom Kelly, and Stephen Dolan. See the file
 [fiber_primitives.c](https://github.com/dhil/ocaml-multicont/blob/master/fiber_primitives.c)
 for the details.
