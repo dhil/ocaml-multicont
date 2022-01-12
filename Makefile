@@ -95,6 +95,7 @@ dune-package:
  (name multicont)\n\
  (kind normal)\n\
  (archives (byte multicont.cma) (native multicont.cmxa))\n\
+ (foreign_archives libmulticont.a libmulticontopt.a)\n\
  (native_archives multicont.a)\n\
  (main_module_name Multicont)\n\
  (modes byte native)\n\

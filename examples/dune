@@ -2,7 +2,6 @@
  (name nqueens)
  (modules nqueens)
  (modes byte_complete native)
- (flags (:standard (:include linking-flags.sexp)))
  (libraries multicont))
 
 
@@ -10,10 +9,6 @@
  (name generic_count)
  (modules generic_count)
  (modes byte_complete native)
- (flags (:standard (-cclib -L/home/dhil/.opam/5.00.0+trunk/lib/multicont)))
  (libraries multicont))
 
-(rule
- (with-stdout-to linking-flags.sexp
-  (run ./gen-linking-flags.sh)))
 
