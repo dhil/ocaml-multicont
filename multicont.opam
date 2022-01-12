@@ -17,6 +17,7 @@ build: [
 
 install: [
   [ make "install" ]
+  [ make "VERSION=%{version}%" "dune-package" ]
 ]
 
 depends: [

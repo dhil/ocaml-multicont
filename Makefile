@@ -11,6 +11,7 @@ OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 STUBLIBS=$(shell opam var stublibs)
 LIB=$(shell opam var lib)
 INSTDIR=$(LIB)/multicont
+VERSION=
 
 .DEFAULT_GOAL: all
 .PHONY: all
@@ -67,14 +68,30 @@ install:
 			cp libmulticont.a multicont.cma $(INSTDIR); fi; \
 		if test -f dllmulticontopt.so \
 	        && test -f libmulticontopt.a \
+                && test -f multicont.a \
                 && test -f multicont.cmx \
 	        && test -f multicont.cmxa; then \
 			cp dllmulticontopt.so $(STUBLIBS); \
-			cp libmulticontopt.a multicont.cmx multicont.cmxa $(INSTDIR); fi; \
+			cp libmulticontopt.a multicont.a multicont.cmx multicont.cmxa $(INSTDIR); fi; \
 		if test -f multicont.cmt; then cp multicont.cmt $(INSTDIR); fi; \
 		if test -f multicont.cmti; then cp multicont.cmti $(INSTDIR); fi; fi
-	if test -f $(LIB)/multicont/libmulticont.a; then cd $(INSTDIR) && ranlib libmulticont.a; fi
-	if test -f $(LIB)/multicont/libmulticontopt.a; then cd $(INSTDIR) && ranlib libmulticontopt.a; fi
+	if test -f $(INSTDIR)/libmulticont.a; then cd $(INSTDIR) && ranlib libmulticont.a; fi
+	if test -f $(INSTDIR)/libmulticontopt.a; then cd $(INSTDIR) && ranlib libmulticontopt.a; fi
+
+.PHONY: dune-package
+dune-package:
+	echo "(lang dune 2.9)\n\
+(name multicont)\n\
+(version $(VERSION))\n\
+(library\n\
+ (name multicont)\n\
+ (kind normal)\n\
+ (archives (byte multicont.cma) (native multicont.cmxa))\n\
+ (native_archives multicont.a)\n\
+ (main_module_name Multicont)\n\
+ (modes byte native)\n\
+ (modules\n\
+  (singleton (name Multicont) (obj_name multicont) (visibility public) (impl))))" > $(INSTDIR)/dune-package
 
 uninstall:
 	rm -rf $(INSTDIR)
