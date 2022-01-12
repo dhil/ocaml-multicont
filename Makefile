@@ -100,7 +100,11 @@ dune-package:
  (main_module_name Multicont)\n\
  (modes byte native)\n\
  (modules\n\
-  (singleton (name Multicont) (obj_name multicont) (visibility public) (impl))))" > $(INSTDIR)/dune-package
+  (singleton\n\
+    (name Multicont)\n\
+    (obj_name multicont)\n\
+    (visibility public)\n\
+    (impl))))" > $(INSTDIR)/dune-package
 
 uninstall:
 	rm -rf $(INSTDIR)
