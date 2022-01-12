@@ -11,11 +11,14 @@ version: "1.0"
 
 
 build: [
-  [ "dune" "subst" ] {dev}
-  [ "dune" "build" "-p" name "-j" jobs ]
+  [ make "all" ] {dev}
+  [ make "all" ]
+]
+
+install: [
+  [ make "install" ]
 ]
 
 depends: [
   "ocaml" {>= "5.0"}
-  "dune" {>= "2.9.0"}
 ]

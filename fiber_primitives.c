@@ -27,7 +27,7 @@
 
 #ifdef NATIVE_CODE
 #include <caml/stack.h>
-#include <frame_descriptors.h>
+#include <caml/frame_descriptors.h>
 #endif
 
 Caml_inline struct stack_info* alloc_for_stack (mlsize_t wosize)
@@ -109,7 +109,7 @@ struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval,
 }
 
 
-//#ifdef NATIVE_CODE
+#ifdef NATIVE_CODE
 /* Update absolute exception pointers for new stack*/
 void multicont_rewrite_exception_stack(struct stack_info *old_stack,
                                        value** exn_ptr, struct stack_info *new_stack) {
@@ -137,4 +137,4 @@ void multicont_rewrite_exception_stack(struct stack_info *old_stack,
     /* fiber_debug_log ("exn_ptr is null"); */
   }
 }
-//#endif
+#endif

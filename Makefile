@@ -2,37 +2,85 @@
 ROOT:=$(shell dirname $(firstword $(MAKEFILE_LIST)))
 BUILD_DIR:=$(ROOT)/_build
 
-# The build command and some standard build system flags
-CAML_BUILD=dune build
-CAML_SOURCES=multicont
-# Note: this relies on lazy expansion of `SOURCES'.
-CAML_COMMON_FLAGS=--only-packages $(SOURCES) --build-dir=$(BUILD_DIR)
-CAML_DEV_FLAGS=$(COMMON_FLAGS) --profile=dev
-CAML_REL_FLAGS=$(COMMON_FLAGS) --profile=release
-CAML_CI_FLAGS=$(COMMON_FLAGS) --profile=ci
-# List of packages that we currently release
-CAML_RELEASE_PKGS:=$(SOURCES)
+# Common compilation flags
+DLLPATH=.
+NATIVE_CFLAGS=-ccopt -DNATIVE_CODE
+OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 
-# The default is to build everything in development mode.
-.DEFAULT_GOAL:= all
+# Installation configuration
+STUBLIBS=$(shell opam var stublibs)
+LIB=$(shell opam var lib)
+
+.DEFAULT_GOAL: all
 .PHONY: all
-all: build-dev-all
+all: byte native
 
-# Invokes `dune' to build everything in continuous integration mode.
-.PHONY: build-ci-all
-build-ci-all: dune dune-project
-	$(CAML_BUILD) $(CAML_CI_FLAGS) @install
+# Build byte code compatible library
+.PHONY: byte
+byte: multicont.cmo libmulticont.a
+	ocamlmklib -o multicont -oc multicont -dllpath $(DLLPATH) multicont.cmo
 
-# Invokes `dune' to build everything in development mode.
-.PHONY: build-dev-all
-build-dev-all: dune dune-project
-	$(CAML_BUILD) $(CAML_DEV_FLAGS) @install
+libmulticont.a: fiber_primitives.o-byte multicont_stubs.o-byte
+	ocamlmklib -oc multicont -dllpath $(DLLPATH) fiber_primitives.o multicont_stubs.o
 
-# Invokes `dune' to build everything in release mode.
-.PHONY: build-release-all
-build-release-all: dune dune-project
-	$(CAML_BUILD) $(CAML_REL_FLAGS) @install
+multicont.cmo: multicont.mli multicont.ml
+	ocamlc -c $(OCFLAGS) multicont.mli multicont.ml
+
+.PHONY: fiber_primitives.o-byte
+fiber_primitives.o-byte: fiber_primitives.h fiber_primitives.c
+	ocamlc -c fiber_primitives.c
+
+.PHONY: multicont_stubs.o-byte
+multicont_stubs.o-byte: fiber_primitives.o multicont_stubs.c
+	ocamlc -c multicont_stubs.c
+
+# Build native code compatible library
+.PHONY: native
+native: multicont.cmx libmulticontopt.a
+	ocamlmklib -o multicont -oc multicontopt -dllpath $(DLLPATH) multicont.cmx
+
+libmulticontopt.a: fiber_primitives.o-native multicont_stubs.o-native
+	ocamlmklib -oc multicontopt -dllpath $(DLLPATH) fiber_primitives.o multicont_stubs.o
+
+multicont.cmx: multicont.mli multicont.ml
+	ocamlopt -c $(OCFLAGS) multicont.mli multicont.ml
+
+.PHONY: fiber_primitives.o-native
+fiber_primitives.o-native: fiber_primitives.h fiber_primitives.c
+	ocamlopt -c -ccopt -DNATIVE_CODE fiber_primitives.c
+
+.PHONY: multicont_stubs.o-native
+multicont_stubs.o-native: fiber_primitives.o multicont_stubs.c
+	ocamlopt -c -ccopt -DNATIVE_CODE multicont_stubs.c
+
+# Install the library into OPAM
+install:
+	if test -d $(LIB); then \
+		mkdir -p $(LIB)/multicont; \
+		cp multicont.mli $(LIB)/multicont; \
+		if test -f multicont.cmi; then cp multicont.cmi $(LIB)/multicont; fi; \
+		if test -f dllmulticont.so \
+	        && test -f libmulticont.a \
+	        && test -f multicont.cma; then \
+			cp dllmulticont.so $(STUBLIBS); \
+			cp libmulticont.a multicont.cma $(LIB)/multicont; fi; \
+		if test -f dllmulticontopt.so \
+	        && test -f libmulticontopt.a \
+                && test -f multicont.cmx \
+	        && test -f multicont.cmxa; then \
+			cp dllmulticontopt.so $(STUBLIBS); \
+			cp libmulticontopt.a multicont.cmx multicont.cmxa $(LIB)/multicont; fi; \
+		if test -f multicont.cmt; then cp multicont.cmt $(LIB)/multicont; fi; \
+		if test -f multicont.cmti; then cp multicont.cmti $(LIB)/multicont; fi; fi
+	if test -f $(LIB)/multicont/libmulticont.a; then cd $(LIB)/multicont && ranlib libmulticont.a; fi
+	if test -f $(LIB)/multicont/libmulticontopt.a; then cd $(LIB)/multicont && ranlib libmulticontopt.a; fi
+
+uninstall:
+	rm -rf $(LIB)/multicont
+	rm -f $(STUBLIBS)/dllmulticontopt.so $(STUBLIBS)/dllmulticont.so
 
 .PHONY: clean
 clean:
 	dune clean
+	rm -f *.so *.o *.a
+	rm -f *.cmo *.cmx *.cma *.cmxa *.cmi *.cmt *.cmti

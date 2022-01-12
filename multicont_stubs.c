@@ -7,11 +7,10 @@
 #include <caml/memory.h>   // provides CAMLparam* and CAMLreturn* macros
 #include <caml/misc.h>     // provides [CAMLnoalloc] macro
 
-// TODO FIXME: the following includes are only meaningful for native mode
-//#ifdef NATIVE_CODE
+#ifdef NATIVE_CODE
 #include <caml/stack.h>
 #include <caml/frame_descriptors.h>
-//#endif
+#endif
 
 #include "fiber_primitives.h" // provides copies of the hidden
                               // [alloc_stack_noexc] and
@@ -98,12 +97,11 @@ value multicont_clone_continuation(value k) {
              Stack_high(current) - stack_used,
              stack_used * sizeof(value));
 
-      // TODO FIXME: this would be wrong in byte code mode.
-      //#ifdef NATIVE_CODE
+#ifdef NATIVE_CODE
       // Rewrite exception pointer on the new stack segment
       clone->exception_ptr = current->exception_ptr;
       multicont_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
-      //#endif
+#endif
 
       // Set stack pointer on [clone]
       clone->sp = Stack_high(clone) - stack_used;
