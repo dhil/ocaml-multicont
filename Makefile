@@ -10,6 +10,7 @@ OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 # Installation configuration
 STUBLIBS=$(shell opam var stublibs)
 LIB=$(shell opam var lib)
+INSTDIR=$(LIB)/multicont
 
 .DEFAULT_GOAL: all
 .PHONY: all
@@ -56,27 +57,27 @@ multicont_stubs.o-native: fiber_primitives.o multicont_stubs.c
 # Install the library into OPAM
 install:
 	if test -d $(LIB); then \
-		mkdir -p $(LIB)/multicont; \
-		cp multicont.mli $(LIB)/multicont; \
-		if test -f multicont.cmi; then cp multicont.cmi $(LIB)/multicont; fi; \
+		mkdir -p $(INSTDIR); \
+		cp multicont.mli $(INSTDIR); \
+		if test -f multicont.cmi; then cp multicont.cmi $(INSTDIR); fi; \
 		if test -f dllmulticont.so \
 	        && test -f libmulticont.a \
 	        && test -f multicont.cma; then \
 			cp dllmulticont.so $(STUBLIBS); \
-			cp libmulticont.a multicont.cma $(LIB)/multicont; fi; \
+			cp libmulticont.a multicont.cma $(INSTDIR); fi; \
 		if test -f dllmulticontopt.so \
 	        && test -f libmulticontopt.a \
                 && test -f multicont.cmx \
 	        && test -f multicont.cmxa; then \
 			cp dllmulticontopt.so $(STUBLIBS); \
-			cp libmulticontopt.a multicont.cmx multicont.cmxa $(LIB)/multicont; fi; \
-		if test -f multicont.cmt; then cp multicont.cmt $(LIB)/multicont; fi; \
-		if test -f multicont.cmti; then cp multicont.cmti $(LIB)/multicont; fi; fi
-	if test -f $(LIB)/multicont/libmulticont.a; then cd $(LIB)/multicont && ranlib libmulticont.a; fi
-	if test -f $(LIB)/multicont/libmulticontopt.a; then cd $(LIB)/multicont && ranlib libmulticontopt.a; fi
+			cp libmulticontopt.a multicont.cmx multicont.cmxa $(INSTDIR); fi; \
+		if test -f multicont.cmt; then cp multicont.cmt $(INSTDIR); fi; \
+		if test -f multicont.cmti; then cp multicont.cmti $(INSTDIR); fi; fi
+	if test -f $(LIB)/multicont/libmulticont.a; then cd $(INSTDIR) && ranlib libmulticont.a; fi
+	if test -f $(LIB)/multicont/libmulticontopt.a; then cd $(INSTDIR) && ranlib libmulticontopt.a; fi
 
 uninstall:
-	rm -rf $(LIB)/multicont
+	rm -rf $(INSTDIR)
 	rm -f $(STUBLIBS)/dllmulticontopt.so $(STUBLIBS)/dllmulticont.so
 
 .PHONY: clean
