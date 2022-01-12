@@ -48,11 +48,11 @@ multicont.cmx: multicont.mli multicont.ml
 
 .PHONY: fiber_primitives.o-native
 fiber_primitives.o-native: fiber_primitives.h fiber_primitives.c
-	ocamlopt -c -ccopt -DNATIVE_CODE fiber_primitives.c
+	ocamlopt -c $(NATIVE_CFLAGS) fiber_primitives.c
 
 .PHONY: multicont_stubs.o-native
 multicont_stubs.o-native: fiber_primitives.o multicont_stubs.c
-	ocamlopt -c -ccopt -DNATIVE_CODE multicont_stubs.c
+	ocamlopt -c $(NATIVE_CFLAGS) multicont_stubs.c
 
 # Install the library into OPAM
 install:
