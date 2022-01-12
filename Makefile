@@ -78,6 +78,14 @@ install:
 	if test -f $(INSTDIR)/libmulticont.a; then cd $(INSTDIR) && ranlib libmulticont.a; fi
 	if test -f $(INSTDIR)/libmulticontopt.a; then cd $(INSTDIR) && ranlib libmulticontopt.a; fi
 
+.PHONY: META
+META:
+	echo "version = \"$(VERSION)\"\n\
+description = \"\"\n\
+requires = \"\"\n\
+archive(byte) = \"multicont.cma\"\n\
+archive(native) = \"multicont.cmxa\"" > $(INSTDIR)/META
+
 .PHONY: dune-package
 dune-package:
 	echo "(lang dune 2.9)\n\
