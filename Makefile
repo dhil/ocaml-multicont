@@ -82,6 +82,5 @@ uninstall:
 
 .PHONY: clean
 clean:
-	dune clean
 	rm -f *.so *.o *.a
 	rm -f *.cmo *.cmx *.cma *.cmxa *.cmi *.cmt *.cmti
