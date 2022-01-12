@@ -1,0 +1,51 @@
+name: Multicont build, install, & running examples suite
+
+on:
+  pull_request:
+    branches: master
+  push:
+    branches: [master]
+  schedule:
+    # Prime the caches every Monday
+    - cron: 0 1 * * MON
+
+jobs:
+  examples:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+        ocaml-compiler:
+          - 5.00.0+trunk
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: Install library
+        run: opam install ./links.opam
+        shell: bash
+
+      - name: Build examples
+        run: dune build examples/
+        shell: bash
+
+      - name: Run native examples
+        run: |
+          test `dune exec ./examples/nqueens.exe` -eq 92
+          test `dune exec examples/generic_count.exe` -eq 128
+        shell: bash
+
+      - name: Run byte code examples
+        run: |
+          test `dune exec ./examples/nqueens.bc.exe` -eq 92
+          test `dune exec examples/generic_count.bc.exe` -eq 128
+        shell: bash
