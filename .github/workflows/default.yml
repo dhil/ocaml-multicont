@@ -29,6 +29,7 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          opam-depext: false
 
       - name: Install library
         run: opam install ./links.opam
