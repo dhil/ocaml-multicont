@@ -1,5 +1,7 @@
 # Multicont: Continuations with multi-shot semantics in OCaml
 
+[![Multicont build, install, & running examples suite](https://github.com/dhil/ocaml-multicont/actions/workflows/default.yml/badge.svg)](https://github.com/dhil/ocaml-multicont/actions/workflows/default.yml)
+
 This library provides a thin abstraction on top of OCaml's regular
 linear continuations that enables programming with multi-shot
 continuations, i.e. continuations that can be applied more than once.
