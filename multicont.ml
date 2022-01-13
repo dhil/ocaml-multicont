@@ -6,7 +6,7 @@
 exception Resumption_already_dropped
 
 module Deep = struct
-  open EffectHandlers.Deep
+  open Effect.Deep
 
   type ('a, 'b) resumption = ('a, 'b) continuation
 
@@ -32,7 +32,7 @@ module Deep = struct
 end
 
 
-module Shallow = struct open EffectHandlers.Shallow
+module Shallow = struct open Effect.Shallow
 
   type ('a, 'b) resumption = ('a, 'b) continuation
 

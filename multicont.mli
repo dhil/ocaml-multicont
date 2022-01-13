@@ -4,7 +4,7 @@
 exception Resumption_already_dropped
 
 module Deep: sig
-  open EffectHandlers.Deep
+  open Effect.Deep
 
   type ('a, 'b) resumption
 
@@ -43,12 +43,11 @@ module Deep: sig
       continuation [k]. Note, however, that this function does not clean
       up acquired resources captured by the continuation. In order to
       delete the continuation and free up the resources the programmer
-      should instead use `discontinue` from the [EffectHandlers.Deep]
-      module. *)
+      should instead use `discontinue` from the [Effect.Deep] module. *)
 end
 
 module Shallow: sig
-  open EffectHandlers.Shallow
+  open Effect.Shallow
 
   type ('a, 'b) resumption
 
@@ -87,6 +86,5 @@ module Shallow: sig
       continuation [k]. Note, however, that this function does not clean
       up acquired resources captured by the continuation. In order to
       delete the continuation and free up the resources the programmer
-      should instead use [discontinue_with] from the
-      [EffectHandlers.Shallow] module. *)
+      should instead use [discontinue_with] from the [Effect.Shallow] module. *)
 end
