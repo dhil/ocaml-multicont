@@ -1,6 +1,6 @@
 (* Generic counting example based on Hillerström et al. (2020) https://arxiv.org/abs/2007.00605 *)
 
-open EffectHandlers
+open Effect
 open Deep
 
 type _ eff += Branch : bool eff

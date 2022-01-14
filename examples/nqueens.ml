@@ -4,7 +4,7 @@
      https://github.com/effect-handlers/effect-handlers-bench/blob/ca4ed12fc2265c16c562016ec09f0466d81d1ddd/benchmarks/ocaml/001_nqueens/001_nqueens_ocaml.ml
    *)
 
-open EffectHandlers
+open Effect
 open Deep
 
 let n = try int_of_string Sys.argv.(1) with _ -> 8
