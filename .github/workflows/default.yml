@@ -31,6 +31,10 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext: false
 
+      - name: Install dune
+        run: opam install dune
+        shell: bash
+
       - name: Install library
         run: opam install ./multicont.opam
         shell: bash
