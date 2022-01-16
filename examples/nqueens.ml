@@ -42,11 +42,7 @@ let count_queens_solutions =
            (* Convert [k] into a multi-shot resumption *)
            let r = promote k in
            let rec loop i acc =
-             if i = n
-             then (* Last invocation of the resumption. The GC will
-                     eventually collect the resumption [r]. *)
-                  let nsol = resume r i in
-                  nsol + acc
+             if i > n then acc
              else (* Invoke the resumption. This branch may be
                      executed potentially many times. *)
                   let nsol = resume r i in

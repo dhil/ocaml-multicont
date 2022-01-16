@@ -11,7 +11,6 @@ module Deep = struct
   (* Primitives *)
   external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation = "multicont_clone_continuation"
   external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
-  external is_null_continuation : ('a, 'b) continuation -> bool = "multicont_is_null_continuation" [@@noalloc]
   external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
 
   let promote : ('a, 'b) continuation -> ('a, 'b) resumption
@@ -34,7 +33,6 @@ module Shallow = struct open Effect.Shallow
   (* Primitives *)
   external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation = "multicont_clone_continuation"
   external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
-  external is_null_continuation : ('a, 'b) continuation -> bool = "multicont_is_null_continuation" [@@noalloc]
   external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
 
   let promote : ('a, 'b) continuation -> ('a, 'b) resumption

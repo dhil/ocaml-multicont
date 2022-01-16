@@ -17,15 +17,6 @@
                               // [rewrite_exception_stack] functions
                               // from [fiber.c]
 
-value multicont_is_null_continuation(value k) {
-  CAMLparam1(k);
-  CAMLnoalloc;
-  value stack = Field(k, 0),
-        null_stack = Val_ptr(NULL);
-
-  CAMLreturn(Val_bool(stack == null_stack));
-}
-
 value multicont_promote(value k) {
   CAMLparam1(k);
   CAMLlocal1(r);
