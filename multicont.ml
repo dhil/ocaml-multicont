@@ -3,8 +3,6 @@
    semantics is achieved by performing a shallow copy of linear
    continuations on demand (i.e. prior to invocation). *)
 
-exception Resumption_already_dropped
-
 module Deep = struct
   open Effect.Deep
 
@@ -15,20 +13,17 @@ module Deep = struct
   external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
   external is_null_continuation : ('a, 'b) continuation -> bool = "multicont_is_null_continuation" [@@noalloc]
   external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
-  external demote : ('a, 'b) resumption -> ('a, 'b) continuation = "multicont_demote"
+
+  let promote : ('a, 'b) continuation -> ('a, 'b) resumption
+    = fun k ->
+    let r = promote k in
+    Gc.finalise drop_continuation r; r
 
   let resume : ('a, 'b) resumption -> 'a -> 'b
-    = fun r v ->
-    if is_null_continuation r then raise Resumption_already_dropped
-    else continue (clone_continuation r) v
+    = fun r v -> continue (clone_continuation r) v
 
   let abort : ('a, 'b) resumption -> exn -> 'b
-    = fun r exn ->
-    if is_null_continuation r then raise Resumption_already_dropped
-    else discontinue (clone_continuation r) exn
-
-  let drop : ('a, 'b) resumption -> unit
-    = fun r -> drop_continuation r
+    = fun r exn -> discontinue (clone_continuation r) exn
 end
 
 
@@ -41,18 +36,15 @@ module Shallow = struct open Effect.Shallow
   external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
   external is_null_continuation : ('a, 'b) continuation -> bool = "multicont_is_null_continuation" [@@noalloc]
   external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
-  external demote : ('a, 'b) resumption -> ('a, 'b) continuation = "multicont_demote"
+
+  let promote : ('a, 'b) continuation -> ('a, 'b) resumption
+    = fun k ->
+    let r = promote k in
+    Gc.finalise drop_continuation r; r
 
   let resume_with : ('c, 'a) resumption -> 'c -> ('a, 'b) handler -> 'b
-    = fun r v h ->
-    if is_null_continuation r then raise Resumption_already_dropped
-    else continue_with (clone_continuation r) v h
+    = fun r v h -> continue_with (clone_continuation r) v h
 
   let abort_with : ('c, 'a) resumption -> exn -> ('a, 'b) handler -> 'b
-    = fun r exn h ->
-    if is_null_continuation r then raise Resumption_already_dropped
-    else discontinue_with (clone_continuation r) exn h
-
-  let drop : ('a, 'b) resumption -> unit
-    = fun r -> drop_continuation r
+    = fun r exn h -> discontinue_with (clone_continuation r) exn h
 end

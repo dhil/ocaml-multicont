@@ -42,21 +42,6 @@ value multicont_promote(value k) {
   CAMLreturn(r);
 }
 
-value multicont_demote(value r) {
-  CAMLparam1(r);
-  CAMLlocal1(k);
-
-  value null_stk = Val_ptr(NULL);
-
-  k = caml_alloc_1(Cont_tag, null_stk);
-  {
-    CAMLnoalloc;
-    caml_continuation_replace(k, Ptr_val(caml_continuation_use(r)));
-  }
-
-  CAMLreturn(k);
-}
-
 value multicont_clone_continuation(value k) {
   CAMLparam1(k);      // input continuation object
   CAMLlocal1(kclone); // resulting continuation object clone
