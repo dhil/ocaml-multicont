@@ -26,47 +26,39 @@ submodules for the `Deep` and `Shallow` variations of
 continuations. This library intentionally uses a slightly different
 terminology than `Effect` in order to allow both libraries to be
 opened in the same scope. For example, this library uses the
-terminology `resumption` in place of `continuation`.  The signature
-file
+terminology `resumption` in place of `continuation`. A resumption
+essentially amounts to a GC managed variation of a regular OCaml
+continuation, which in addition can be continued multiple times.  The
+signature file
 [multicont.mli](https://github.com/dhil/ocaml-multicont/blob/master/multicont.mli)
 contains the interface for this library, which I have inlined below:
 
 ```ocaml
-exception Resumption_already_dropped
-
 module Deep: sig
+  open Effect.Deep
 
   type ('a, 'b) resumption
+  (** a [resumption] is a managed variation of
+     [Effect.Deep.continuation] that can be used multiple times. *)
 
-  val promote : ('a, 'b) Effect.Deep.continuation -> ('a, 'b) resumption
+  val promote : ('a, 'b) continuation -> ('a, 'b) resumption
   (** [promote k] converts a regular linear deep continuation to a multi-shot deep
       resumption. This function fully consumes the supplied the continuation [k]. *)
 
-  val demote : ('a, 'b) resumption -> ('a, 'b) Effect.Deep.continuation
-  (** [demote r] converts a deep multi-shot resumption into a linear
-      deep continuation. The argument [r] is fully consumed, making
-      further invocations of [r] impossible. *)
-
   val resume : ('a, 'b) resumption -> 'a -> 'b
   (** [resume r v] reinstates the context captured by the multi-shot
-      deep resumption [r] with value [v].
-      @raises Resumption_already_dropped if the resumption has been dropped. *)
+      deep resumption [r] with value [v]. *)
 
   val abort  : ('a, 'b) resumption -> exn -> 'b
   (** [abort r e] injects the exception [e] into the context captured
-      by the multi-shot deep resumption [r].
-      @raises Resumption_already_dropped if the resumption has been dropped. *)
-
-  val drop : ('a, 'b) resumption -> unit
-  (** [drop r] fully consumes the multi-shot deep resumption [r],
-      making further invocations of [r] impossible. *)
+      by the multi-shot deep resumption [r]. *)
 
   (* Primitives *)
-  val clone_continuation : ('a, 'b) Effect.Deep.continuation -> ('a, 'b) Effect.Deep.continuation
+  val clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation
   (** [clone_continuation k] clones the linear deep continuation [k]. The
       supplied continuation is *not* consumed. *)
 
-  val drop_continuation : ('a, 'b) Effect.Deep.continuation -> unit
+  val drop_continuation : ('a, 'b) continuation -> unit
   (** [drop_continuation k] deallocates the memory occupied by the
       continuation [k]. Note, however, that this function does not clean
       up acquired resources captured by the continuation. In order to
@@ -75,38 +67,30 @@ module Deep: sig
 end
 
 module Shallow: sig
+  open Effect.Shallow
 
   type ('a, 'b) resumption
+  (** a [resumption] is a managed variation of
+     [Effect.Shallow.continuation] that can be used multiple times. *)
 
-  val promote : ('a, 'b) Effect.Shallow.continuation -> ('a, 'b) resumption
+  val promote : ('a, 'b) continuation -> ('a, 'b) resumption
  (** [promote k] converts a regular linear shallow continuation to a multi-shot shallow
      resumption. This function fully consumes the supplied the continuation [k]. *)
 
-  val demote : ('a, 'b) resumption -> ('a, 'b) Effect.Shallow.continuation
- (** [demote r] converts a shallow multi-shot resumption into a linear
-     shallow continuation. The argument [r] is fully consumed, making
-     further invocations of [r] impossible. *)
-
-  val resume_with : ('a, 'b) resumption -> 'a -> ('b, 'c) Effect.Shallow.handler -> 'c
+  val resume_with : ('c, 'a) resumption -> 'c -> ('a, 'b) handler -> 'b
   (** [resume r v h] reinstates the context captured by the multi-shot
-      shallow resumption [r] with value [v] under the handler [h].
-      @raises Resumption_already_dropped if the resumption has been dropped. *)
+      shallow resumption [r] with value [v] under the handler [h]. *)
 
-  val abort_with  : ('c, 'a) resumption -> exn -> ('a, 'b) Effect.Shallow.handler -> 'b
+  val abort_with  : ('c, 'a) resumption -> exn -> ('a, 'b) handler -> 'b
   (** [abort r e h] injects the exception [e] into the context captured
-      by the multi-shot shallow resumption [r] under the handler [h].
-      @raises Resumption_already_dropped if the resumption has been dropped. *)
-
-  val drop : ('a, 'b) resumption -> unit
-  (** [drop r] fully consumes the multi-shot shallow resumption [r],
-      making further invocations of [r] impossible. *)
+      by the multi-shot shallow resumption [r] under the handler [h]. *)
 
   (* Primitives *)
-  val clone_continuation : ('a, 'b) Effect.Shallow.continuation -> ('a, 'b) Effect.Shallow.continuation
+  val clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation
   (** [clone_continuation k] clones the linear shallow continuation [k]. The
       supplied continuation is *not* consumed. *)
 
-  val drop_continuation : ('a, 'b) Effect.Shallow.continuation -> unit
+  val drop_continuation : ('a, 'b) continuation -> unit
   (** [drop_continuation k] deallocates the memory occupied by the
       continuation [k]. Note, however, that this function does not clean
       up acquired resources captured by the continuation. In order to
@@ -115,7 +99,10 @@ module Shallow: sig
 end
 ```
 
-It is worth stressing that supplying a `resumption` object to `abort`/`abort_with` only injects an exception into a single copy of the resumption, meaning it is possible to subsequently supply same `resumption` object to `resume`/`resume_with`. In order to destroy all copies, one must explicitly use `drop` on the `resumption` object. If you know in advance that how many invocations of the resumption you are going to do, then it is more efficient to use `demote` on the `resumption` object prior to the last invocation and use the regular OCaml API on the resulting `continuation`.
+It is worth stressing that both `resume`/`resume_with` and
+`abort`/`abort_with` exhibit multi-shot semantics, meaning in the
+latter case that it is possible to abort a given `resumption` multiple
+times.
 
 ## Programming with multi-shot continuations
 
