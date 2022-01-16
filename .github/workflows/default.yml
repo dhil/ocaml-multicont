@@ -32,7 +32,7 @@ jobs:
           opam-depext: false
 
       - name: Install library
-        run: opam install ./links.opam
+        run: opam install ./multicont.opam
         shell: bash
 
       - name: Build examples
