@@ -27,8 +27,7 @@ let generic_count : (bool, int) handler =
            let open Multicont.Deep in
            let r = promote k in
            let tt = resume r true in
-           let k = demote r in
-           let ff = continue k false in
+           let ff = resume r false in
            tt + ff)
     | _ -> None) }
 

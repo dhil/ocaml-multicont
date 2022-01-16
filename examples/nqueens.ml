@@ -43,11 +43,9 @@ let count_queens_solutions =
            let r = promote k in
            let rec loop i acc =
              if i = n
-             then (* Last invocation of the resumption. Convert [r]
-                     back into a linear continuation (more efficient
-                     than subsequently dropping the resumption). *)
-                  let k = demote r in
-                  let nsol = continue k i in
+             then (* Last invocation of the resumption. The GC will
+                     eventually collect the resumption [r]. *)
+                  let nsol = resume r i in
                   nsol + acc
              else (* Invoke the resumption. This branch may be
                      executed potentially many times. *)
