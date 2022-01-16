@@ -44,7 +44,7 @@ let count_queens_solutions =
            let rec loop i acc =
              if i > n then acc
              else (* Invoke the resumption. This branch may be
-                     executed potentially many times. *)
+                     executed many times. *)
                   let nsol = resume r i in
                   loop (i + 1) (nsol + acc)
            in
