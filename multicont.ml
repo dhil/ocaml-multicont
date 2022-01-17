@@ -9,9 +9,12 @@ module Deep = struct
   type ('a, 'b) resumption = ('a, 'b) continuation
 
   (* Primitives *)
-  external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation = "multicont_clone_continuation"
-  external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
-  external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
+  external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation
+    = "multicont_clone_continuation"
+  external drop_continuation : ('a, 'b) continuation -> unit
+    = "multicont_drop_continuation"
+  external promote : ('a, 'b) continuation -> ('a, 'b) resumption
+    = "multicont_promote"
 
   let promote : ('a, 'b) continuation -> ('a, 'b) resumption
     = fun k ->
@@ -23,6 +26,11 @@ module Deep = struct
 
   let abort : ('a, 'b) resumption -> exn -> 'b
     = fun r exn -> discontinue (clone_continuation r) exn
+
+  let abort_with_backtrace : ('a, 'b) resumption -> exn ->
+                             Printexc.raw_backtrace -> 'b
+    = fun r exn bt ->
+    discontinue_with_backtrace (clone_continuation r) exn bt
 end
 
 
@@ -31,9 +39,12 @@ module Shallow = struct open Effect.Shallow
   type ('a, 'b) resumption = ('a, 'b) continuation
 
   (* Primitives *)
-  external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation = "multicont_clone_continuation"
-  external drop_continuation : ('a, 'b) continuation -> unit = "multicont_drop_continuation"
-  external promote : ('a, 'b) continuation -> ('a, 'b) resumption = "multicont_promote"
+  external clone_continuation : ('a, 'b) continuation -> ('a, 'b) continuation
+    = "multicont_clone_continuation"
+  external drop_continuation : ('a, 'b) continuation -> unit
+    = "multicont_drop_continuation"
+  external promote : ('a, 'b) continuation -> ('a, 'b) resumption
+    = "multicont_promote"
 
   let promote : ('a, 'b) continuation -> ('a, 'b) resumption
     = fun k ->
@@ -45,4 +56,9 @@ module Shallow = struct open Effect.Shallow
 
   let abort_with : ('c, 'a) resumption -> exn -> ('a, 'b) handler -> 'b
     = fun r exn h -> discontinue_with (clone_continuation r) exn h
+
+  let abort_with_backtrace : ('c, 'a) resumption -> exn ->
+                             Printexc.raw_backtrace -> ('a, 'b) handler -> 'b
+    = fun r exn bt h ->
+    discontinue_with_backtrace (clone_continuation r) exn bt h
 end
