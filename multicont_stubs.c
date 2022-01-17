@@ -25,7 +25,10 @@ value multicont_promote(value k) {
 
   r = caml_alloc_1(Cont_tag, null_stk);
 
+  // Move the stack from [k] to [r]
   {
+    // Prevent the GC from running between [caml_continuation_use] and
+    // [caml_continuation_replace]
     CAMLnoalloc;
     caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
   }
@@ -37,7 +40,7 @@ value multicont_clone_continuation(value k) {
   CAMLparam1(k);      // input continuation object
   CAMLlocal1(kclone); // resulting continuation object clone
 
-  intnat stack_used;
+  intnat space_used;
   value null_stk = Val_ptr(NULL);
 
   struct stack_info *source,    // original stack segment pointed to by [k]
@@ -58,7 +61,7 @@ value multicont_clone_continuation(value k) {
 
     // Copy each stack segment in the chain
     while (current != NULL) {
-      stack_used = Stack_high(current) - (value*)current->sp;
+      space_used = Stack_high(current) - (value*)current->sp;
 
       // Allocate a fresh stack segment the size of [current]
       clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
@@ -69,9 +72,9 @@ value multicont_clone_continuation(value k) {
       if (!clone) caml_raise_out_of_memory();
 
       // Copy the contents of [current] onto [clone]
-      memcpy(Stack_high(clone) - stack_used,
-             Stack_high(current) - stack_used,
-             stack_used * sizeof(value));
+      memcpy(Stack_high(clone) - space_used,
+             Stack_high(current) - space_used,
+             space_used * sizeof(value));
 
 #ifdef NATIVE_CODE
       // Rewrite exception pointer on the new stack segment
@@ -80,7 +83,7 @@ value multicont_clone_continuation(value k) {
 #endif
 
       // Set stack pointer on [clone]
-      clone->sp = Stack_high(clone) - stack_used;
+      clone->sp = Stack_high(clone) - space_used;
 
       // Prepare to handle the next stack segment
       *link = clone;
