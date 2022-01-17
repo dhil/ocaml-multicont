@@ -11,4 +11,10 @@
  (modes byte_complete native)
  (libraries multicont))
 
+(executable
+ (name choice)
+ (modules choice)
+ (modes byte_complete native)
+ (libraries multicont))
+
 
