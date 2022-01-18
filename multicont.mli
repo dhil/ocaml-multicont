@@ -9,8 +9,9 @@ module Deep: sig
      [Effect.Deep.continuation] that can be used multiple times. *)
 
   val promote : ('a, 'b) continuation -> ('a, 'b) resumption
-  (** [promote k] converts a regular linear deep continuation to a multi-shot deep
-      resumption. This function fully consumes the supplied the continuation [k]. *)
+  (** [promote k] converts a regular linear deep continuation to a
+      multi-shot deep resumption. This function fully consumes the
+      supplied the continuation [k]. *)
 
   val resume : ('a, 'b) resumption -> 'a -> 'b
   (** [resume r v] reinstates the context captured by the multi-shot
