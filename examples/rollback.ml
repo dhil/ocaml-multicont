@@ -22,7 +22,7 @@ end
 
 open Effect
 type _ eff += Peek : char eff
-   | Accept : unit eff
+            | Accept : unit eff
 
 exception Abort
 
