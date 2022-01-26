@@ -74,9 +74,6 @@ and rollback : 'a log -> 'a = function
                 IO.put_char ' ';
                 IO.put_char '\b';
                 rollback l
-  (* | Inched (l, r) ->
-   *    let open Multicont.Shallow in
-   *    let exception  *)
   | Inched (l, r) ->
      let open Multicont.Shallow in
      (* Memory leak *)
