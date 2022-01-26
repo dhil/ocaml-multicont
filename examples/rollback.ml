@@ -1,10 +1,28 @@
 (* Modular rollback parsing. Adapted from Lindley et al. (2017),
    c.f. https://arxiv.org/pdf/1611.09259.pdf *)
 
-open Effect
+module IO = struct
+  let term_io = Unix.(tcgetattr stdin)
 
+  let get_char () =
+    (* Disable canonical processing and echoing of input
+       characters. *)
+    Unix.(tcsetattr
+            stdin
+            TCSADRAIN
+            { term_io with c_icanon = false; c_echo = false });
+    let ch = input_char stdin in
+    (* Restore terminal defaults. *)
+    Unix.(tcsetattr stdin TCSADRAIN term_io);
+    ch
+
+  let put_char ch =
+    output_char stdout ch; flush stdout
+end
+
+open Effect
 type _ eff += Peek : char eff
-              | Accept : unit eff
+   | Accept : unit eff
 
 exception Abort
 
@@ -39,22 +57,26 @@ let rec input : 'a log -> char option -> ('a, 'a) Shallow.handler
                   let r = promote k in
                   match buf with
                   | Some c -> resume_with r c (input l buf)
-                  | None -> match input_char stdin with
+                  | None -> match IO.get_char () with
                             | '\b' -> rollback l
                             | c -> resume_with r c (input (Inched (l, r)) (Some c)))
     | Accept -> Some (fun (k : (a, _) continuation) ->
-                  let open Multicont.Shallow in
-                  let r = promote k in
-                  match buf with
-                  | Some c -> output_char stdout c; resume_with r () (input (Ouched l) None)
-                  | None -> resume_with r () (input l None))
+                    let open Multicont.Shallow in
+                    let r = promote k in
+                    match buf with
+                    | Some c -> IO.put_char c;
+                                resume_with r () (input (Ouched l) None)
+                    | None -> resume_with r () (input l None))
     | _ -> None) }
 and rollback : 'a log -> 'a = function
   | Start p -> parse p
-  | Ouched l -> output_char stdout '\b';
-                output_char stdout ' ';
-                output_char stdout '\b';
+  | Ouched l -> IO.put_char '\b';
+                IO.put_char ' ';
+                IO.put_char '\b';
                 rollback l
+  (* | Inched (l, r) ->
+   *    let open Multicont.Shallow in
+   *    let exception  *)
   | Inched (l, r) ->
      let open Multicont.Shallow in
      (* Memory leak *)
@@ -70,13 +92,15 @@ and parse : (unit, 'a) Multicont.Shallow.resumption -> 'a
 let rec zeros : int -> int
   = fun n ->
   match peek () with
-  | '0' -> accept(); zeros (n+1)
-  | ' ' -> accept(); n
-  | _   -> abort()
+  | '0' -> accept (); zeros (n+1)
+  | ' ' -> accept (); n
+  | _   -> abort ()
 
 let t1 () =
+  let open Effect.Shallow in
   let open Multicont.Shallow in
-  parse (promote (Shallow.fiber (fun () -> zeros 0)))
+  let i = parse (promote (fiber (fun () -> zeros 0))) in
+  Printf.printf "%d\n%!" i
 
 let rec nest : char list -> int -> char list
   = fun cs n ->
@@ -91,6 +115,9 @@ let rec nest : char list -> int -> char list
        | c   -> accept (); nest (c :: cs) n
 
 let t2 () =
+  let open Effect.Shallow in
   let open Multicont.Shallow in
-  let cs = parse (promote (Shallow.fiber (fun () -> nest [] 0))) in
-  String.init (List.length cs) (fun i -> List.nth cs i)
+  let cs = parse (promote (fiber (fun () -> nest [] 0))) in
+  Printf.printf "%s\n" (String.init (List.length cs) (fun i -> List.nth cs i))
+
+let _ = t2 ()
