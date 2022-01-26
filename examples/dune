@@ -17,4 +17,10 @@
  (modes byte_complete native)
  (libraries multicont))
 
+(executable
+ (name rollback)
+ (modules rollback)
+ (modes byte_complete native)
+ (libraries multicont))
+
 
