@@ -72,7 +72,7 @@ let rec zeros : int -> int
   match peek () with
   | '0' -> accept(); zeros (n+1)
   | ' ' -> accept(); n
-  | c -> abort()
+  | _   -> abort()
 
 let t1 () =
   let open Multicont.Shallow in
@@ -84,7 +84,7 @@ let rec nest : char list -> int -> char list
   then match peek () with
        | '('  -> accept (); nest cs 1
        | '\n' -> accept (); cs
-       | c    -> abort ()
+       | _    -> abort ()
   else match peek () with
        | '(' -> accept (); nest cs (n + 1)
        | ')' -> accept (); nest cs (n - 1)
