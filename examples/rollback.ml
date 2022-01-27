@@ -71,8 +71,6 @@ let rec input : 'a log -> char option -> ('a, 'a) Shallow.handler
 and rollback : 'a log -> 'a = function
   | Start p -> parse p
   | Ouched l -> IO.put_char '\b';
-                IO.put_char ' ';
-                IO.put_char '\b';
                 rollback l
   | Inched (l, r) ->
      let open Multicont.Shallow in
@@ -114,7 +112,7 @@ let rec nest : char list -> int -> char list
 let t2 () =
   let open Effect.Shallow in
   let open Multicont.Shallow in
-  let cs = parse (promote (fiber (fun () -> nest [] 0))) in
+  let cs = List.rev (parse (promote (fiber (fun () -> nest [] 0)))) in
   Printf.printf "%s\n" (String.init (List.length cs) (fun i -> List.nth cs i))
 
 let _ = t2 ()
