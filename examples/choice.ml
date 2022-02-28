@@ -54,7 +54,8 @@ let branch_example : unit -> int
       then failwith "Fail"
       else 42)
 
-(* More involved example, requiring `amb` to three right choices. *)
+(* More involved example, requiring `amb` to make three correct
+   choices. *)
 let pyth : int list -> (int * int * int)
   = fun numbers ->
   let numbers' = List.map (fun n -> (fun () -> n)) numbers in
