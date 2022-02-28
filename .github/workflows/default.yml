@@ -32,7 +32,9 @@ jobs:
           opam-depext: false
 
       - name: Install dune
-        run: opam install dune
+        run: |
+          opam install dune
+          eval $(opam env)
         shell: bash
 
       - name: Install library
