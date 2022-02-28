@@ -20,17 +20,16 @@ module IO = struct
     output_char stdout ch; flush stdout
 end
 
-open Effect
-type _ eff += Peek : char eff
-            | Accept : unit eff
+type _ Effect.t += Peek : char Effect.t
+                 | Accept : unit Effect.t
 
 exception Abort
 
 let peek : unit -> char
-  = fun () -> perform Peek
+  = fun () -> Effect.perform Peek
 
 let accept : unit -> unit
-  = fun () -> perform Accept
+  = fun () -> Effect.perform Accept
 
 let abort : unit -> 'a
   = fun () -> raise Abort
@@ -40,17 +39,17 @@ type 'a log = Start of (unit, 'a) Multicont.Shallow.resumption
             | Ouched of 'a log
 
 
-let identity : ('a, 'a) Shallow.handler
+let identity : ('a, 'a) Effect.Shallow.handler
   = { retc = (fun x -> x)
     ; exnc = (fun e -> raise e)
-    ; effc = (fun (type a) (_ : a eff) -> None) }
+    ; effc = (fun (type a) (_ : a Effect.t) -> None) }
 
-let rec input : 'a log -> char option -> ('a, 'a) Shallow.handler
+let rec input : 'a log -> char option -> ('a, 'a) Effect.Shallow.handler
   = fun l buf ->
-  let open Shallow in
+  let open Effect.Shallow in
   { retc = (fun x -> x)
   ; exnc = (function Abort -> rollback l | e -> raise e)
-  ; effc = (fun (type a) (eff : a eff) ->
+  ; effc = (fun (type a) (eff : a Effect.t) ->
     match eff with
     | Peek -> Some (fun (k : (a, _) continuation) ->
                   let open Multicont.Shallow in
@@ -75,7 +74,7 @@ and rollback : 'a log -> 'a = function
   | Inched (l, r) ->
      let open Multicont.Shallow in
      (* Memory leak *)
-     let f = promote (Shallow.fiber (fun () ->
+     let f = promote (Effect.Shallow.fiber (fun () ->
                           resume_with r (peek ()) identity))
      in
      resume_with f () (input l None)

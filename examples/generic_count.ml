@@ -1,9 +1,8 @@
 (* Generic counting example based on Hillerström et al. (2020) https://arxiv.org/abs/2007.00605 *)
 
-open Effect
-open Deep
+open Effect.Deep
 
-type _ eff += Branch : bool eff
+type _ Effect.t += Branch : bool Effect.t
 
 type point = int -> bool
 type predicate = point -> bool
@@ -20,7 +19,7 @@ let xor_predicate : int -> predicate
 let generic_count : (bool, int) handler =
   { retc = (fun x -> if x then 1 else 0)
   ; exnc = (fun e -> raise e)
-  ; effc = (fun (type a) (eff : a eff) ->
+  ; effc = (fun (type a) (eff : a Effect.t) ->
     match eff with
     | Branch ->
        Some (fun (k : (a, _) continuation) ->
@@ -33,5 +32,5 @@ let generic_count : (bool, int) handler =
 
 let _ =
   let n = try int_of_string Sys.argv.(1) with _ -> 8 in
-  let solutions = match_with (xor_predicate n) (fun _ -> perform Branch) generic_count in
+  let solutions = match_with (xor_predicate n) (fun _ -> Effect.perform Branch) generic_count in
   Printf.printf "%d\n" solutions

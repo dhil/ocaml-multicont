@@ -2,7 +2,7 @@
   * McCarthy's locally angelic choice
   *)
 
-open Effect
+open Effect.Deep
 
 module type NONDET = sig
   type elem
@@ -17,10 +17,10 @@ sig
 end = struct
   type elem = N.elem
 
-  type _ eff += Choose : (unit -> elem) list -> elem eff
+  type _ Effect.t += Choose : (unit -> elem) list -> elem Effect.t
 
   let amb : (unit -> elem) list -> elem
-  = fun xs -> perform (Choose xs)
+  = fun xs -> Effect.perform (Choose xs)
 
   let first_success (type a) : (elem -> a) -> (unit -> elem) list -> a
     = fun f gs ->
@@ -38,14 +38,12 @@ end = struct
 
   let handle : (unit -> 'a) -> 'a
     = fun m ->
-    let open Deep in
     (* McCarthy's locally angelic choice operator (angelic modulo
        nontermination). *)
     let hamb =
-      let open Deep in
       { retc = (fun x -> x)
       ; exnc = (fun e -> raise e)
-      ; effc = (fun (type a) (eff : a eff) ->
+      ; effc = (fun (type a) (eff : a Effect.t) ->
         match eff with
         | Choose xs ->
            Some

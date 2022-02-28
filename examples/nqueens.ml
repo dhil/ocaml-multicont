@@ -4,8 +4,7 @@
      https://github.com/effect-handlers/effect-handlers-bench/blob/ca4ed12fc2265c16c562016ec09f0466d81d1ddd/benchmarks/ocaml/001_nqueens/001_nqueens_ocaml.ml
    *)
 
-open Effect
-open Deep
+open Effect.Deep
 
 let n = try int_of_string Sys.argv.(1) with _ -> 8
 
@@ -16,13 +15,13 @@ let rec safe queen diag xs =
   | q :: qs -> queen <> q && queen <> q + diag && queen <> q - diag &&
                safe queen (diag + 1) qs
 
-type _ eff += Pick : int -> int eff
+type _ Effect.t += Pick : int -> int Effect.t
 exception Fail
 
 let rec find_solution n col : int list =
   if col = 0 then []
   else let sol = find_solution n (col - 1) in
-       let queen = perform (Pick n) in
+       let queen = Effect.perform (Pick n) in
        if safe queen 1 sol then queen::sol else raise Fail
 
 (* Deep effect handler that counts the number of solutions to an
@@ -30,7 +29,7 @@ let rec find_solution n col : int list =
 let count_queens_solutions =
   { retc = (fun _ -> 1) (* If the computation returns, then we have found a solution. *)
   ; exnc = (fun e -> match e with Fail -> 0 | _ -> raise e) (* If the computation fails, then we have not found a solution. *)
-  ; effc = (fun (type a) (eff : a eff) ->
+  ; effc = (fun (type a) (eff : a Effect.t) ->
     match eff with
     | Pick n -> (* We handle [Pick] by successively trying to place
                    Queens on the board by invoking the provided
