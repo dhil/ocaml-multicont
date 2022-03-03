@@ -1,4 +1,4 @@
-# Multicont 1.0.0-rc.1
+# Multicont version 1.0.0-rc.1
 
 This is release candidate 1 (and initial release) of the multicont
 library for OCaml.
