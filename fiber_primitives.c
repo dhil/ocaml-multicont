@@ -30,6 +30,12 @@
 #include <caml/frame_descriptors.h>
 #endif
 
+#ifdef USE_MMAP_MAP_STACK
+#include <sys/mman.h>
+#endif
+
+#define NUM_STACK_SIZE_CLASSES 5 // defined in runtime/fiber.c
+
 Caml_inline struct stack_info* alloc_for_stack (mlsize_t wosize)
 {
   size_t len = sizeof(struct stack_info) +
