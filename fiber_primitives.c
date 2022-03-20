@@ -56,36 +56,44 @@ Caml_inline struct stack_info* alloc_for_stack (mlsize_t wosize)
 #endif /* USE_MMAP_MAP_STACK */
 }
 
-Caml_inline struct stack_info** stack_cache_bucket (mlsize_t wosize) {
+/* Returns the index into the [Caml_state->stack_cache] array if this size is
+ * pooled. If unpooled, it is [-1].
+ *
+ * Stacks may be unpooled if either the stack size is not 2**N multiple of
+ * [caml_fiber_wsz] or the stack is bigger than pooled sizes. */
+Caml_inline int stack_cache_bucket (mlsize_t wosize) {
   mlsize_t size_bucket_wsz = caml_fiber_wsz;
-  struct stack_info** size_bucket = Caml_state->stack_cache;
-  struct stack_info** end = size_bucket + NUM_STACK_SIZE_CLASSES;
+  int bucket=0;
 
-  /* wosize is in stack cache bucket n iff wosize == caml_fiber_wsz * 2**n */
-  while (size_bucket < end) {
+  while (bucket < NUM_STACK_SIZE_CLASSES) {
     if (wosize == size_bucket_wsz)
-      return size_bucket;
-    ++size_bucket;
+      return bucket;
+    ++bucket;
     size_bucket_wsz += size_bucket_wsz;
   }
 
-  return NULL;
+  return -1;
 }
 
 static struct stack_info*
-alloc_size_class_stack_noexc(mlsize_t wosize, struct stack_info** size_bucket,
+alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket,
                              value hval, value hexn, value heff)
 {
   struct stack_info* stack;
   struct stack_handler* hand;
+  struct stack_info **cache = Caml_state->stack_cache;
 
   CAML_STATIC_ASSERT(sizeof(struct stack_info) % sizeof(value) == 0);
   CAML_STATIC_ASSERT(sizeof(struct stack_handler) % sizeof(value) == 0);
 
-  if (size_bucket != NULL && *size_bucket != NULL) {
-    stack = *size_bucket;
-    *size_bucket = (struct stack_info*)stack->exception_ptr;
-    CAMLassert(stack->size_bucket == stack_cache_bucket(wosize));
+  CAMLassert(cache != NULL);
+
+  if (cache_bucket != -1 &&
+      cache[cache_bucket] != NULL) {
+    stack = cache[cache_bucket];
+    cache[cache_bucket] =
+      (struct stack_info*)stack->exception_ptr;
+    CAMLassert(stack->cache_bucket == stack_cache_bucket(wosize));
     hand = stack->handler;
   } else {
     /* couldn't get a cached stack, so have to create one */
@@ -94,7 +102,7 @@ alloc_size_class_stack_noexc(mlsize_t wosize, struct stack_info** size_bucket,
       return NULL;
     }
 
-    stack->size_bucket = size_bucket;
+    stack->cache_bucket = cache_bucket;
 
     /* Ensure 16-byte alignment because some architectures require it */
     hand = (struct stack_handler*)
@@ -120,10 +128,10 @@ alloc_size_class_stack_noexc(mlsize_t wosize, struct stack_info** size_bucket,
 
 /* allocate a stack with at least "wosize" usable words of stack */
 struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval,
-                                               value hexn, value heff)
+                                                      value hexn, value heff)
 {
-  struct stack_info** size_bucket = stack_cache_bucket(wosize);
-  return alloc_size_class_stack_noexc(wosize, size_bucket, hval, hexn, heff);
+  int cache_bucket = stack_cache_bucket (wosize);
+  return alloc_size_class_stack_noexc(wosize, cache_bucket, hval, hexn, heff);
 }
 
 
