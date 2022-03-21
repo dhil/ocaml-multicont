@@ -4,7 +4,6 @@
  (modes byte_complete native)
  (libraries multicont))
 
-
 (executable
  (name generic_count)
  (modules generic_count)
