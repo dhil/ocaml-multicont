@@ -138,7 +138,6 @@ dune-package:
 # Clean up rule
 .PHONY: clean
 clean:
-	dune clean
 	rm -f META dune-package
 	rm -f *.so *.o *.a
 	rm -f *.cmo *.cmx *.cma *.cmxa *.cmi *.cmt *.cmti
