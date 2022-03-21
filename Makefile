@@ -1,14 +1,21 @@
+# Project root and build directory
+ROOT:=$(shell dirname $(firstword $(MAKEFILE_LIST)))
+BUILD_DIR:=$(ROOT)/_build
+
 # Common compilation flags
 DLLPATH=.
 NATIVE_CFLAGS=-ccopt -DNATIVE_CODE
 OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 
-# Configurable variables
+# Installation configuration
+STUBLIBS=$(shell opam var stublibs)
+LIB=$(shell opam var lib)
+INSTDIR=$(LIB)/multicont
 VERSION="1.0.0~rc.2"
 
 .DEFAULT_GOAL: all
 .PHONY: all
-all: byte native META dune-package
+all: byte native dune-package META
 
 # Build byte code compatible library
 .PHONY: byte
@@ -48,8 +55,36 @@ fiber_primitives.o-native: fiber_primitives.h fiber_primitives.c
 multicont_stubs.o-native: fiber_primitives.o multicont_stubs.c
 	ocamlopt -c $(NATIVE_CFLAGS) multicont_stubs.c
 
+# Install the library into OPAM
+install:
+	if test -d $(LIB); then \
+		mkdir -p $(INSTDIR); \
+		cp multicont.mli $(INSTDIR); \
+		if test -f multicont.cmi; then cp multicont.cmi $(INSTDIR); fi; \
+		if test -f dllmulticont.so \
+	        && test -f libmulticont.a \
+	        && test -f multicont.cma; then \
+			cp dllmulticont.so $(STUBLIBS); \
+			cp libmulticont.a multicont.cma $(INSTDIR); fi; \
+		if test -f dllmulticontopt.so \
+	        && test -f libmulticontopt.a \
+                && test -f multicont.a \
+                && test -f multicont.cmx \
+	        && test -f multicont.cmxa; then \
+			cp dllmulticontopt.so $(STUBLIBS); \
+			cp libmulticontopt.a multicont.a multicont.cmx multicont.cmxa $(INSTDIR); fi; \
+		if test -f multicont.cmt; then cp multicont.cmt $(INSTDIR); fi; \
+		if test -f multicont.cmti; then cp multicont.cmti $(INSTDIR); fi; fi
+	cp "dune-package" $(INSTDIR)/; \
+	cp META $(INSTDIR); \
+	if test -f $(INSTDIR)/libmulticont.a; then cd $(INSTDIR) && ranlib libmulticont.a; fi
+	if test -f $(INSTDIR)/libmulticontopt.a; then cd $(INSTDIR) && ranlib libmulticontopt.a; fi
+
+uninstall:
+	rm -rf $(INSTDIR)
+	rm -f $(STUBLIBS)/dllmulticontopt.so $(STUBLIBS)/dllmulticont.so
+
 # Generate META and dune-package
-.PHONY: META
 META:
 	@echo "Generating META"
 	@echo "version = \"$(VERSION)\"\n\
@@ -58,7 +93,6 @@ requires = \"\"\n\
 archive(byte) = \"multicont.cma\"\n\
 archive(native) = \"multicont.cmxa\"" > META
 
-.PHONY: dune-package
 dune-package:
 	@echo "Generating dune-package"
 	@echo "(lang dune 3.0)\n\
@@ -100,13 +134,6 @@ dune-package:
     (visibility public)\n\
     (impl)\n\
     (intf))))" > dune-package
-
-# Install helper rule. My local opam does not seem to pick up
-# multicont.install when the install section is either omitted or left
-# empty in multicont.opam.
-.PHONY: noop
-noop:
-	@echo "No-op rule invoked"
 
 # Clean up rule
 .PHONY: clean
