@@ -90,7 +90,7 @@ let rec zeros : int -> int
   | ' ' -> accept (); n
   | _   -> abort ()
 
-let t1 () =
+let _t1 () =
   let open Effect.Shallow in
   let open Multicont.Shallow in
   let i = parse (promote (fiber (fun () -> zeros 0))) in
