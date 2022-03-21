@@ -4,7 +4,7 @@ NATIVE_CFLAGS=-ccopt -DNATIVE_CODE
 OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 
 # Configurable variables
-VERSION="1.0.0-rc.2"
+VERSION="1.0.0~rc.2"
 
 .DEFAULT_GOAL: all
 .PHONY: all
