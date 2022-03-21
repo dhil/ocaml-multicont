@@ -17,5 +17,5 @@ depends: [
 ]
 
 install: [
-  "echo" "Hello"
+  make "noop"
 ]

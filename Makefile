@@ -1,16 +1,9 @@
-# Project root and build directory
-ROOT:=$(shell dirname $(firstword $(MAKEFILE_LIST)))
-BUILD_DIR:=$(ROOT)/_build
-
 # Common compilation flags
 DLLPATH=.
 NATIVE_CFLAGS=-ccopt -DNATIVE_CODE
 OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 
-# Installation configuration
-STUBLIBS=$(shell opam var stublibs)
-LIB=$(shell opam var lib)
-INSTDIR=$(LIB)/multicont
+# Configurable variables
 VERSION="1.0.0-rc.2"
 
 .DEFAULT_GOAL: all
@@ -55,6 +48,7 @@ fiber_primitives.o-native: fiber_primitives.h fiber_primitives.c
 multicont_stubs.o-native: fiber_primitives.o multicont_stubs.c
 	ocamlopt -c $(NATIVE_CFLAGS) multicont_stubs.c
 
+# Generate META and dune-package
 .PHONY: META
 META:
 	@echo "Generating META"
@@ -107,6 +101,14 @@ dune-package:
     (impl)\n\
     (intf))))" > dune-package
 
+# Install helper rule. My local opam does not seem to pick up
+# multicont.install when the install section is either omitted or left
+# empty in multicont.opam.
+.PHONY: noop
+noop:
+	@echo "No-op rule invoked"
+
+# Clean up rule
 .PHONY: clean
 clean:
 	dune clean
