@@ -8,10 +8,16 @@ continuations, i.e. continuations that can be applied more than once.
 
 ## Installing the library
 
-The library can be installed via [OPAM](https://opam.ocaml.org/). At
-the time of writing the library is not yet available in the stock OPAM
-repository, until it is available the best way to install the library
-is by pinning it, e.g.
+The library can be installed via [OPAM](https://opam.ocaml.org/). The
+latest release can be installed directly from the default OPAM
+repository, e.g.
+
+```
+$ opam install multicont
+```
+
+Alternatively, the latest development version can be installed by
+pinning this repository, e.g.
 
 ```
 $ opam pin multicont git@github.com:dhil/ocaml-multicont.git
