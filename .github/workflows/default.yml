@@ -52,13 +52,15 @@ jobs:
       - name: Run native examples
         run: |
           eval $(opam env)
-          test `dune exec ./examples/nqueens.exe` -eq 92
-          test `dune exec examples/generic_count.exe` -eq 128
+          cd examples
+          test `dune exec ./nqueens.exe` -eq 92
+          test `dune exec ./generic_count.exe` -eq 128
         shell: bash
 
       - name: Run byte code examples
         run: |
           eval $(opam env)
+          cd examples
           test `dune exec ./examples/nqueens.bc.exe` -eq 92
-          test `dune exec examples/generic_count.bc.exe` -eq 128
+          test `dune exec ./generic_count.bc.exe` -eq 128
         shell: bash
