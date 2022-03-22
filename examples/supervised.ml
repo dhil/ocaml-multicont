@@ -119,7 +119,6 @@ let child : int -> int -> int ref -> unit
   else Printf.printf "Child %d succeeded!\n%!" i
 
 let example () =
-  ignore(fail);
   let s = ref 0 in
   let pid = fork () in
   if Pid.is_zero pid
