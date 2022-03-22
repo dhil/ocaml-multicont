@@ -25,7 +25,6 @@ end = struct
                   | Done _ -> true
                   | _ -> false
 
-
     let wait : 'a t -> ('a -> unit) -> unit
       = fun pr r -> match !pr with
                     | Done _ -> assert false
@@ -59,7 +58,7 @@ end = struct
   let async : (unit -> 'a) -> 'a Promise.t
     = fun f ->
     let pr = Promise.make_empty () in
-    if fork ()
+    if fork () (* returns twice *)
     then pr
     else let v = f () in
          (match !pr with
@@ -79,10 +78,8 @@ end = struct
 
     let run_next : state -> unit
       = fun st ->
-      if Queue.is_empty st.suspended
-      then ()
-      else let r = Queue.take st.suspended in
-           r ()
+      if Queue.is_empty st.suspended then ()
+      else Queue.take st.suspended ()
 
     let hsched : unit -> (unit, unit) Effect.Deep.handler
       = fun () ->
@@ -113,18 +110,16 @@ end = struct
 
   let run : (unit -> 'a) -> 'a
     = fun f ->
-    let result = ref None in
+    let result = ref (fun () -> raise Promise.Circular_await) in
     let f' () =
       let v = f () in
-      result := Some v
+      result := (fun () -> v)
     in
     let () = Effect.Deep.match_with f' () (Scheduler.hsched ()) in
-    match !result with
-    | None -> raise Promise.Circular_await
-    | Some v -> v
+    !result ()
 end
 
-(* Dynamic binding *)
+(* Another effect: dynamic binding *)
 module Env = struct
   type _ Effect.t += Ask : int Effect.t
 
