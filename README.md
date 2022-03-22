@@ -6,6 +6,11 @@ This library provides a thin abstraction on top of OCaml's regular
 linear continuations that enables programming with multi-shot
 continuations, i.e. continuations that can be applied more than once.
 
+See the
+[`examples/`](https://github.com/dhil/ocaml-multicont/tree/master/examples)
+directory for concrete uses of this library (or multi-shot
+continuations) in practice.
+
 ## Installing the library
 
 The library can be installed via [OPAM](https://opam.ocaml.org/). The
@@ -120,9 +125,83 @@ It is worth stressing that both `resume`/`resume_with` and
 latter case that it is possible to abort a given `resumption` multiple
 times.
 
-## Programming with multi-shot continuations
+## Cautionary tales in programming with multi-shot continuations in OCaml
 
-TODO
+The OCaml compiler and runtime make some assumptions that are false in
+the presence of multi-shot continuations. This phenomenon is perhaps
+best illustrated by an example. Concretely, we can consider some
+optimisations performed by the compiler which are undesirable (or
+outright wrong) when programming with multi-shot continuations. An
+instance of a wrong compiler optimisation is *heap to stack*
+conversion, e.g.
+
+```ocaml
+(* An illustration of how the heap to stack optimisation is broken.
+ * This example is adapted from de Vilhena and Pottier (2021).
+ * file: heap2stack.ml
+ * compile: ocamlopt -I $(opam var lib)/multicont multicont.cmxa heap2stack.ml
+ * run: ./a.out *)
+
+(* We first require a little bit of setup. The following declares an
+   operation `Twice' which we use to implement multiple returns. *)
+type _ Effect.t += Twice : unit Effect.t
+
+(* The handler `htwice' interprets `Twice' by simply invoking its
+   continuation twice. *)
+let htwice : (unit, unit) Effect.Deep.handler
+  = { retc = (fun x -> x)
+    ; exnc = (fun e -> raise e)
+    ; effc = (fun (type a) (eff : a Effect.t) ->
+      let open Effect.Deep in
+      match eff with
+      | Twice -> Some (fun (k : (a, _) continuation) ->
+         continue (Multicont.Deep.clone_continuation k) ();
+         continue k ())
+      | _ -> None) }
+
+(* Now for the interesting stuff. In the code below, the compiler will
+   perform an escape analysis on the reference `i' and deduce that it
+   does not escape the local scope, because it is unaware of the
+   semantics of `perform Twice', hence the optimiser will transform
+   `i' into an immediate on the stack to save a heap allocation. As a
+   consequence, the assertion `(!i = 1)' will succeed twice, whereas
+   it should fail after the second return of `perform Twice'. *)
+let heap2stack () =
+  Effect.Deep.match_with
+    (fun () ->
+      let i = ref 0 in
+      Effect.perform Twice;
+      i := !i + 1;
+      Printf.printf "i = %d\n%!" !i;
+      assert (!i = 1))
+    () htwice
+
+(* The following does not trigger an assertion failure. *)
+let _ = heap2stack ()
+
+(* To fix this issue, we can wrap reference allocations in an instance
+   of `Sys.opaque_identity'. However, this is not really a viable fix
+   in general, as we may not have access to the client code that
+   allocate the reference! *)
+let heap2stack' () =
+  Effect.Deep.match_with
+    (fun () ->
+      let i = Sys.opaque_identity (ref 0) in
+      Effect.perform Twice;
+      i := !i + 1;
+      Printf.printf "i = %d\n%!" !i;
+      assert (!i = 1))
+    () htwice
+
+(* The following triggers an assertion failure. *)
+let _ = heap2stack' ()
+```
+
+The wrong behaviour of `heap2stack` is only observed when compiling
+with `ocamlc` or `ocamlopt`. As of writing, the read-eval-print loop
+interpreter does not perform the heap to stack conversion, therefore
+running it through `ocaml` will cause `heap2stack` to trigger the
+assertion failure as desired.
 
 ## Notes on the implementation
 
