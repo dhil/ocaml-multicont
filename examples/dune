@@ -22,4 +22,8 @@
  (modes byte_complete native)
  (libraries multicont unix))
 
-
+(executable
+ (name supervised)
+ (modules supervised)
+ (modes byte_complete native)
+ (libraries multicont))
