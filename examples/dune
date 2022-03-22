@@ -27,3 +27,9 @@
  (modules supervised)
  (modes byte_complete native)
  (libraries multicont))
+
+(executable
+ (name async)
+ (modules async)
+ (modes byte_complete native)
+ (libraries multicont))
