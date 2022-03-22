@@ -4,6 +4,7 @@
 module Async: sig
   module Promise: sig
     type 'a t
+    exception Circular_await
   end
 
   val await : 'a Promise.t -> 'a
@@ -17,6 +18,7 @@ end = struct
                     | Pending of ('a -> unit) list
     type 'a t = 'a promise ref
 
+    exception Circular_await
 
     let is_done : 'a t -> bool
       = fun pr -> match !pr with
@@ -94,11 +96,9 @@ end = struct
       ; effc = (fun (type a) (eff : a Effect.t) ->
         match eff with
         | Await pr -> Some (fun (k : (a, unit) continuation) ->
-          let open Multicont.Deep in
-          let r = promote k in
           (if Promise.is_done pr
-           then resume r (Promise.value pr)
-           else Promise.wait pr (fun v -> resume r v));
+           then continue k (Promise.value pr)
+           else Promise.wait pr (fun v -> continue k v));
           run_next state)
         | Fork -> Some (fun (k : (bool, unit) continuation) ->
           let open Multicont.Deep in
@@ -106,21 +106,22 @@ end = struct
           enqueue state (fun () -> resume r false);
           resume r true)
         | Yield -> Some (fun (k : (unit, unit) continuation) ->
-          let open Multicont.Deep in
-          let r = promote k in
-          enqueue state (fun () -> resume r ());
+          enqueue state (fun () -> continue k ());
           run_next state)
         | _ -> None) }
   end
 
   let run : (unit -> 'a) -> 'a
     = fun f ->
-    let result = ref (fun () -> assert false) in
+    let result = ref None in
     let f' () =
       let v = f () in
-      result := (fun () -> v)
+      result := Some v
     in
-    Effect.Deep.match_with f' () (Scheduler.hsched ()); !result ()
+    let () = Effect.Deep.match_with f' () (Scheduler.hsched ()) in
+    match !result with
+    | None -> raise Promise.Circular_await
+    | Some v -> v
 end
 
 (* Dynamic binding *)
@@ -174,3 +175,18 @@ let main () =
   assert Async.(await pa + await pb = await pc)
 
 let _ = Async.run main
+
+(* The following program would deadlock if cyclic
+   promise resolution was allowed *)
+(* let try_deadlock () =
+ *   let pr = ref (fun () -> assert false) in
+ *   let task () =
+ *     Async.await (!pr ())
+ *   in
+ *   print_endline "Fork task";
+ *   let pr' = Async.async task in
+ *   pr := (fun () -> pr');
+ *   print_endline "Await";
+ *   Async.await (!pr ())
+ *
+ * let _ = Async.run try_deadlock *)
