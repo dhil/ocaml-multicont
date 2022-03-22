@@ -47,7 +47,7 @@ let handle : (unit -> 'a) -> 'a
    (c.f. https://okmij.org/ftp/ML/ML.html#amb) *)
 
 (* An angelic choice *always* picks the successful branch. *)
-let branch_example : unit -> int
+let _branch_example : unit -> int
   = fun () ->
   handle (fun () ->
       if amb [(fun () -> true); (fun () -> false)]
