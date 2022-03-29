@@ -46,7 +46,8 @@ jobs:
       - name: Build examples
         run: |
           eval $(opam env)
-          dune build examples/
+          cd examples
+          dune build
         shell: bash
 
       - name: Run native examples
