@@ -182,7 +182,7 @@ let _ = heap2stack ()
 (* To fix this issue, we can wrap reference allocations in an instance
    of `Sys.opaque_identity'. However, this is not really a viable fix
    in general, as we may not have access to the client code that
-   allocate the reference! *)
+   allocates the reference! *)
 let heap2stack' () =
   Effect.Deep.match_with
     (fun () ->
