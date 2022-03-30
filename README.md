@@ -28,6 +28,55 @@ pinning this repository, e.g.
 $ opam pin multicont git@github.com:dhil/ocaml-multicont.git
 ```
 
+### Building from source
+
+It is straightforward to build and install this library from source as
+its only dependency is an OCaml 5.0+ compiler. To build the whole
+library simply invoke the `all` rule, i.e.
+
+```shell
+$ make all
+```
+
+The Makefile also gives you more fine-grained control over what is
+being built. For example, you may only want to build either the byte
+code or native code compatible version of the library.
+
+```shell
+# Builds the byte code compatible library
+$ make byte
+# Builds the native code compatible library
+$ make native
+```
+
+In some cases you may want to build this library from source over,
+say, using OPAM to build and install it, because the installation via
+OPAM is somewhat inflexible in the sense that it does not readily
+allow configurable options to be toggled. Whether to toggle the
+configurable options may depend on how your instance of the OCaml
+compiler was configured. For example, your OCaml compiler might have
+been configured to use virtual memory mapped stacks (option
+`USE_MMAP_MAP_STACK`). To toggle this option for this library, simply
+set the variable on the command line, e.g.
+
+```shell
+$ make USE_MMAP_MAP_STACK=1 all
+```
+
+The Makefile contains an `install` rule, which installs the built
+library under your current OPAM switch, i.e.
+
+```shell
+$ make install
+```
+
+Similarly, the library can easily be uninstalled by invoking the
+appropriate rule, i.e.
+
+```shell
+$ make uninstall
+```
+
 ## The multi-shot continuations interface
 
 This library is designed to be used in tandem with the `Effect`
@@ -218,7 +267,6 @@ guarantees that the original continuation remains cloneable as the
 call `promote k` deattaches the stack embedded in the continuation
 object `k`, meaning that the programmer cannot inadvertently destroy
 the stack by a call to `continue`.
-
 
 ## Acknowledgements
 
