@@ -55,7 +55,8 @@ OPAM is somewhat inflexible in the sense that it does not readily
 allow configurable options to be toggled. Whether to toggle the
 configurable options may depend on how your instance of the OCaml
 compiler was configured. For example, your OCaml compiler might have
-been configured to use virtual memory mapped stacks (option
+been configured to use [virtual memory mapped
+stacks](https://man7.org/linux/man-pages/man2/mmap.2.html) (option
 `USE_MMAP_MAP_STACK`). To toggle this option for this library, simply
 set the variable on the command line, e.g.
 
