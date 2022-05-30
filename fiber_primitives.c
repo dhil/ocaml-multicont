@@ -36,6 +36,10 @@
 
 #define NUM_STACK_SIZE_CLASSES 5 // defined in runtime/fiber.c
 
+//_Atomic int64_t multicont_fiber_id = 0; // TODO(dhil): should we
+                                          // ensure that cloned fibers
+                                          // are uniquely identifiable?
+
 Caml_inline struct stack_info* alloc_for_stack (mlsize_t wosize)
 {
   size_t len = sizeof(struct stack_info) +
@@ -76,8 +80,8 @@ Caml_inline int stack_cache_bucket (mlsize_t wosize) {
 }
 
 static struct stack_info*
-alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket,
-                             value hval, value hexn, value heff)
+alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket, value hval,
+                             value hexn, value heff, int64_t id)
 {
   struct stack_info* stack;
   struct stack_handler* hand;
@@ -117,6 +121,7 @@ alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket,
   hand->parent = NULL;
   stack->sp = (value*)hand;
   stack->exception_ptr = NULL;
+  stack->id = id;
 #ifdef DEBUG
   stack->magic = 42;
 #endif
@@ -128,10 +133,11 @@ alloc_size_class_stack_noexc(mlsize_t wosize, int cache_bucket,
 
 /* allocate a stack with at least "wosize" usable words of stack */
 struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval,
-                                                      value hexn, value heff)
+                                               value hexn, value heff, int64_t id)
 {
   int cache_bucket = stack_cache_bucket (wosize);
-  return alloc_size_class_stack_noexc(wosize, cache_bucket, hval, hexn, heff);
+  return alloc_size_class_stack_noexc(wosize, cache_bucket, hval, hexn, heff,
+                                      id);
 }
 
 

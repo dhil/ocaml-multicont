@@ -4,9 +4,11 @@
 #include <caml/mlvalues.h>
 #include <caml/fiber.h>
 
-struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval, value hexn, value heff);
+struct stack_info* multicont_alloc_stack_noexc(mlsize_t wosize, value hval, value hexn,
+                                               value heff, int64_t id);
 #ifdef NATIVE_CODE
-void multicont_rewrite_exception_stack(struct stack_info *old_stack, value** exn_ptr, struct stack_info *new_stack);
+void multicont_rewrite_exception_stack(struct stack_info *old_stack, value** exn_ptr,
+                                       struct stack_info *new_stack);
 #endif
 
 #endif

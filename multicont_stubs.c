@@ -67,7 +67,8 @@ value multicont_clone_continuation(value k) {
       clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
                                           Stack_handle_value(current),
                                           Stack_handle_exception(current),
-                                          Stack_handle_effect(current));
+                                          Stack_handle_effect(current),
+                                          current->id);
       // Check whether allocation failed
       if (!clone) caml_raise_out_of_memory();
 
