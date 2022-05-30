@@ -32,9 +32,12 @@ jobs:
           opam-depext: false
 
       - name: Install dune
+        # run: |
+        #   opam install dune
+        #   eval $(opam env)
         run: |
-          opam install dune
           eval $(opam env)
+          opam pin add dune git+https://github.com/ocaml/dune.git#9c3b942
         shell: bash
 
       - name: Install library
