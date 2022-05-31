@@ -11,7 +11,7 @@ OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 STUBLIBS=$(shell opam var stublibs)
 LIB=$(shell opam var lib)
 INSTDIR=$(LIB)/multicont
-VERSION="1.0.0~rc.2"
+VERSION="1.0.0~rc.3"
 
 .DEFAULT_GOAL: all
 .PHONY: all
