@@ -64,6 +64,14 @@ set the variable on the command line, e.g.
 $ make USE_MMAP_MAP_STACK=1 all
 ```
 
+Another option one might consider toggling is `UNIQUE_FIBERS` as since
+commit ocaml/ocaml#e12b508 stock OCaml fibers are uniquely
+identifiable. Under the hood this library clones fibers. By default
+this clone will be an exact copy of the original fiber, meaning that
+the clone and original fiber will share the same identity. If unique
+identities are important, then setting `UNIQUE_FIBERS=1` will ensure
+that each clone gets its own unique identity.
+
 The Makefile contains an `install` rule, which installs the built
 library under your current OPAM switch, i.e.
 
