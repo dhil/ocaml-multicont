@@ -66,7 +66,7 @@ $ make USE_MMAP_MAP_STACK=1 all
 
 Another option one might consider toggling is `UNIQUE_FIBERS` as since
 commit
-https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100
+[ocaml/ocaml#e12b508](https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100)
 stock OCaml fibers are uniquely identifiable. Under the hood this
 library clones fibers. By default this clone will be an exact copy of
 the original fiber, meaning that the clone and original fiber will
