@@ -63,12 +63,19 @@ value multicont_clone_continuation(value k) {
     while (current != NULL) {
       space_used = Stack_high(current) - (value*)current->sp;
 
+      int64_t fiber_id;
+#ifdef UNIQUE_FIBERS
+      fiber_id = MULTICONT_NEXT_FIBER_ID;
+#else
+      fiber_id = current->id;
+#endif
+
       // Allocate a fresh stack segment the size of [current]
       clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
                                           Stack_handle_value(current),
                                           Stack_handle_exception(current),
                                           Stack_handle_effect(current),
-                                          current->id);
+                                          fiber_id);
       // Check whether allocation failed
       if (!clone) caml_raise_out_of_memory();
 

@@ -34,11 +34,11 @@
 #include <sys/mman.h>
 #endif
 
-#define NUM_STACK_SIZE_CLASSES 5 // defined in runtime/fiber.c
+#ifdef UNIQUE_FIBERS
+_Atomic int64_t multicont_fiber_id = -1;
+#endif
 
-//_Atomic int64_t multicont_fiber_id = 0; // TODO(dhil): should we
-                                          // ensure that cloned fibers
-                                          // are uniquely identifiable?
+#define NUM_STACK_SIZE_CLASSES 5 // defined in runtime/fiber.c
 
 Caml_inline struct stack_info* alloc_for_stack (mlsize_t wosize)
 {

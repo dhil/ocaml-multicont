@@ -4,7 +4,7 @@ BUILD_DIR:=$(ROOT)/_build
 
 # Common compilation flags
 DLLPATH=.
-NATIVE_CFLAGS=-ccopt -DNATIVE_CODE $(if $(USE_MMAP_MAP_STACK),-ccopt -DUSE_MMAP_MAP_STACK,)
+NATIVE_CFLAGS=-ccopt -DNATIVE_CODE $(if $(USE_MMAP_MAP_STACK),-ccopt -DUSE_MMAP_MAP_STACK,) $(if $(UNIQUE_FIBERS),-ccopt -DUNIQUE_FIBERS,)
 OCFLAGS=-strict-formats -strict-sequence -safe-string -bin-annot -warn-error -a
 
 # Installation configuration
