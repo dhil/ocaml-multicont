@@ -285,3 +285,6 @@ This library includes snippets of code that are originally written by
 KC Sivaramakrishnan, Tom Kelly, and Stephen Dolan. See the file
 [fiber_primitives.c](https://github.com/dhil/ocaml-multicont/blob/master/fiber_primitives.c)
 for the details.
+
+This work was supported by the UKRI Future Leaders Fellowship
+"Effect Handler Oriented Programming" (reference number MR/T043830/1).
