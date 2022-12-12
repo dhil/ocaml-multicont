@@ -113,7 +113,7 @@ module Deep: sig
   val promote : ('a, 'b) Effect.Deep.continuation -> ('a, 'b) resumption
   (** [promote k] converts a regular linear deep continuation to a
       multi-shot deep resumption. This function fully consumes the
-      supplied the continuation [k]. *)
+      supplied continuation [k]. *)
 
   val resume : ('a, 'b) resumption -> 'a -> 'b
   (** [resume r v] reinstates the context captured by the multi-shot
@@ -150,7 +150,7 @@ module Shallow: sig
   val promote : ('a, 'b) Effect.Shallow.continuation -> ('a, 'b) resumption
  (** [promote k] converts a regular linear shallow continuation to a
      multi-shot shallow resumption. This function fully consumes the
-     supplied the continuation [k]. *)
+     supplied continuation [k]. *)
 
   val resume_with : ('c, 'a) resumption -> 'c -> ('a, 'b) handler -> 'b
   (** [resume r v h] reinstates the context captured by the multi-shot
