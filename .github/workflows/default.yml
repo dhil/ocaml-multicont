@@ -17,7 +17,7 @@ jobs:
         os:
           - ubuntu-20.04
         ocaml-compiler:
-          - ocaml-variants.5.0.0+trunk
+          - 5.0.0
 
     runs-on: ${{ matrix.os }}
 
@@ -32,12 +32,12 @@ jobs:
           opam-depext: false
 
       - name: Install dune
-        # run: |
-        #   opam install dune
-        #   eval $(opam env)
         run: |
+          opam install dune
           eval $(opam env)
-          opam pin add dune git+https://github.com/ocaml/dune.git#9c3b942
+        # run: |
+        #   eval $(opam env)
+        #   opam pin add dune git+https://github.com/ocaml/dune.git#9c3b942
         shell: bash
 
       - name: Install library
