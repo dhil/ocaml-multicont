@@ -71,7 +71,7 @@ value multicont_clone_continuation(value k) {
 #endif
 
       // Allocate a fresh stack segment the size of [current]
-      clone = multicont_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
+      clone = caml_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
                                           Stack_handle_value(current),
                                           Stack_handle_exception(current),
                                           Stack_handle_effect(current),
@@ -87,7 +87,7 @@ value multicont_clone_continuation(value k) {
 #ifdef NATIVE_CODE
       // Rewrite exception pointer on the new stack segment
       clone->exception_ptr = current->exception_ptr;
-      multicont_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
+      caml_rewrite_exception_stack(current, (value**)&clone->exception_ptr, clone);
 #endif
 
       // Set stack pointer on [clone]
