@@ -54,6 +54,7 @@ jobs:
           cd examples
           test `opam exec -- dune exec ./nqueens.exe` -eq 92
           test `opam exec -- dune exec ./generic_count.exe` -eq 128
+          diff <(opam exec -- dune exec ./async.exe) <(echo -e "starting a\nyielding a\nstarting b\nyielding b\nending a with 40\nending b with 2\nSum is 42)"
         shell: bash
 
       - name: Run byte code examples
