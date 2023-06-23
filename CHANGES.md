@@ -1,4 +1,11 @@
-# Multicont version 1.0.0 Latest
+# Multicont version 1.0.1 (latest)
+
+This release is a purely administrative release which ports the build
+infrastructure to [dune](https://github.com/ocaml/dune) in order to
+resolve the reported build issues
+(e.g. https://github.com/ocaml/opam-repository/pull/23972).
+
+# Multicont version 1.0.0
 
 To celebrate the recent stable release of OCaml 5, we release a stable
 version of this library fully compatible with OCaml 5. The only change
