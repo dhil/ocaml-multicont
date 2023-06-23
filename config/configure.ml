@@ -11,12 +11,15 @@ let add_flag flag =
   add_native_flag flag
 
 let () =
-  let open Arg in
-  let usage = "configure [-UNIQUE_FIBER | -MMAP_STACK]" in
-  let speclist =
-    [ ("-UNIQUE_FIBERS", Unit (fun () -> add_flag "-DUNIQUE_FIBERS"), "Preserve fiber uniqueness")
-    ; ("-MMAP_STACK", Unit (fun () -> add_flag "-DUSE_MMAP_MAP_STACK"), "Use mmap mapped stacks for fiber clones") ]
+  let options = [ "USE_MMAP_MAP_STACK"
+                ; "UNIQUE_FIBERS"]
   in
-  parse speclist (fun s -> raise (Invalid_argument s)) usage;
+  let toggle option =
+    match Sys.getenv_opt option with
+    | Some "1" ->
+       add_flag (Printf.sprintf "-D%s" option)
+    | _ -> ()
+  in
+  List.iter toggle options;
   C.Flags.write_sexp "c_byte_flags.sexp" !byte_flags;
   C.Flags.write_sexp "c_native_flags.sexp" !native_flags
