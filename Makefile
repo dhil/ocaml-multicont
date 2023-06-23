@@ -14,6 +14,14 @@ install:
 uninstall:
 	dune uninstall --build-dir=$(BUILD_DIR)
 
+.PHONY: release
+release:
+	dune-release tag v1.0.1 --build-dir=$(BUILD_DIR)
+	dune-release distrib --build-dir=$(BUILD_DIR)
+	dune-release publish distrib --build-dir=$(BUILD_DIR)
+	dune-release opam pkg --build-dir=$(BUILD_DIR)
+	dune-release opam submit --build-dir=$(BUILD_DIR)
+
 # Clean up rule
 .PHONY: clean
 clean:
