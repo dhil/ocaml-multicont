@@ -20,13 +20,13 @@ module IO = struct
     output_char stdout ch; flush stdout
 end
 
-type _ Effect.t += Peek : char Effect.t
+type _ Effect.t += Peek : (unit -> char) Effect.t (* Returning a thunk is necessary to avoid a memory leak. See below. *)
                  | Accept : unit Effect.t
 
 exception Abort
 
 let peek : unit -> char
-  = fun () -> Effect.perform Peek
+  = fun () -> (Effect.perform Peek) ()
 
 let accept : unit -> unit
   = fun () -> Effect.perform Accept
@@ -35,14 +35,14 @@ let abort : unit -> 'a
   = fun () -> raise Abort
 
 type 'a log = Start of (unit, 'a) Multicont.Shallow.resumption
-            | Inched of 'a log * (char, 'a) Multicont.Shallow.resumption
+            | Inched of 'a log * ((unit -> char), 'a) Multicont.Shallow.resumption
             | Ouched of 'a log
 
 
-let identity : ('a, 'a) Effect.Shallow.handler
-  = { retc = (fun x -> x)
-    ; exnc = (fun e -> raise e)
-    ; effc = (fun (type a) (_ : a Effect.t) -> None) }
+(* let identity : ('a, 'a) Effect.Shallow.handler
+ *   = { retc = (fun x -> x)
+ *     ; exnc = (fun e -> raise e)
+ *     ; effc = (fun (type a) (_ : a Effect.t) -> None) } *)
 
 let rec input : 'a log -> char option -> ('a, 'a) Effect.Shallow.handler
   = fun l buf ->
@@ -55,10 +55,10 @@ let rec input : 'a log -> char option -> ('a, 'a) Effect.Shallow.handler
                   let open Multicont.Shallow in
                   let r = promote k in
                   match buf with
-                  | Some c -> resume_with r c (input l buf)
+                  | Some c -> resume_with r (fun () -> c) (input l buf)
                   | None -> match IO.get_char () with
                             | '\b' -> rollback l
-                            | c -> resume_with r c (input (Inched (l, r)) (Some c)))
+                            | c -> resume_with r (fun () -> c) (input (Inched (l, r)) (Some c)))
     | Accept -> Some (fun (k : (a, _) continuation) ->
                     let open Multicont.Shallow in
                     let r = promote k in
@@ -72,12 +72,15 @@ and rollback : 'a log -> 'a = function
   | Ouched l -> IO.put_char '\b';
                 rollback l
   | Inched (l, r) ->
+     (* Here we want to inject a computation into the
+        continuation. Specifically, we want to run the `peek`
+        computation at the suspension point. For this reason the
+        operation `Peek` returns a thunk of type `unit ->
+        char`. Alternatively, we could wrap the composition `peek ();
+        resume_with r (Input l None)` in an identity handler. Though,
+        this introduces to a memory leak.*)
      let open Multicont.Shallow in
-     (* Memory leak *)
-     let f = promote (Effect.Shallow.fiber (fun () ->
-                          resume_with r (peek ()) identity))
-     in
-     resume_with f () (input l None)
+     resume_with r peek (input l None)
 and parse : (unit, 'a) Multicont.Shallow.resumption -> 'a
   = fun r ->
   let open Multicont.Shallow in
