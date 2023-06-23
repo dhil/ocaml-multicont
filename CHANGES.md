@@ -1,3 +1,11 @@
+# Multicont version 1.0.0 Latest
+
+To celebrate the recent stable release of OCaml 5, we release a stable
+version of this library fully compatible with OCaml 5. The only change
+between this version and the previous release candidates is that now
+we use the stock OCaml 5 primitives to manage runtime stacks
+(c.f. [caml/fiber.h](https://github.com/ocaml/ocaml/blob/trunk/runtime/caml/fiber.h)).
+
 # Multicont version 1.0.0~rc.2
 
 Release candidate 2 brings the fiber primitives of multicont in sync
