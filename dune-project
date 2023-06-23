@@ -21,6 +21,6 @@
  (description "This library provides facilities for programming with multi-shot continuations in OCaml")
  (depends (ocaml (>= : 5.0.0)) (dune (>= : 3.8.0)))
  (tags
-  (topics "multi-shot continuations" "effect handlers")))
+  ("multi-shot continuations" "effect handlers")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
