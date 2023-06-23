@@ -55,6 +55,8 @@ jobs:
           test `opam exec -- dune exec ./nqueens.exe` -eq 92
           test `opam exec -- dune exec ./generic_count.exe` -eq 128
           diff <(opam exec -- dune exec ./async.exe) <(echo -e "starting a\nyielding a\nstarting b\nyielding b\nending a with 40\nending b with 2\nSum is 42")
+          diff <(opam exec -- dune exec ./supervised.exe) <(echo -e "Parent joining with Child 1\nChild 1 failed!\nChild 2 failed!\nChild 1 failed!\nChild 2 failed!\nChild 2 failed!\nChild 1 succeeded!\nChild 1 joining with Child 2\nChild 2 succeeded!\nChild 2 succeeded!\nChild 2 succeeded!\nChild 1 joined with Child 2\nParent joined with Child 1")
+          diff <(opam exec -- dune exec ./choice.exe) <(echo "(3, 4, 5)")
         shell: bash
 
       - name: Run byte code examples
@@ -62,4 +64,7 @@ jobs:
           cd examples
           test `opam exec -- dune exec ./nqueens.bc.exe` -eq 92
           test `opam exec -- dune exec ./generic_count.bc.exe` -eq 128
+          diff <(opam exec -- dune exec ./async.bc.exe) <(echo -e "starting a\nyielding a\nstarting b\nyielding b\nending a with 40\nending b with 2\nSum is 42")
+          diff <(opam exec -- dune exec ./supervised.bc.exe) <(echo -e "Parent joining with Child 1\nChild 1 failed!\nChild 2 failed!\nChild 1 failed!\nChild 2 failed!\nChild 2 failed!\nChild 1 succeeded!\nChild 1 joining with Child 2\nChild 2 succeeded!\nChild 2 succeeded!\nChild 2 succeeded!\nChild 1 joined with Child 2\nParent joined with Child 1")
+          diff <(opam exec -- dune exec ./choice.bc.exe) <(echo "(3, 4, 5)")
         shell: bash
