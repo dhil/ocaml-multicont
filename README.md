@@ -28,11 +28,12 @@ pinning this repository, e.g.
 $ opam pin multicont git@github.com:dhil/ocaml-multicont.git
 ```
 
-### Building from source
+### Building and installing from source
 
 It is straightforward to build and install this library from source as
-its only dependency is an OCaml 5.0+ compiler. To build the whole
-library simply invoke the `all` rule, i.e.
+its only dependencies are an OCaml 5.0+ compiler, dune, and
+dune-configurator. To build the whole library simply invoke the `all`
+rule, i.e.
 
 ```shell
 $ make all
@@ -42,51 +43,47 @@ The Makefile also gives you more fine-grained control over what is
 being built. For example, you may only want to build either the byte
 code or native code compatible version of the library.
 
-```shell
-# Builds the byte code compatible library
-$ make byte
-# Builds the native code compatible library
-$ make native
-```
-
-In some cases you may want to build this library from source over,
-say, using OPAM to build and install it, because the installation via
-OPAM is somewhat inflexible in the sense that it does not readily
-allow configurable options to be toggled. Whether to toggle the
-configurable options may depend on how your instance of the OCaml
-compiler was configured. For example, your OCaml compiler might have
-been configured to use [virtual memory mapped
-stacks](https://man7.org/linux/man-pages/man2/mmap.2.html) (option
-`USE_MMAP_MAP_STACK`). To toggle this option for this library, simply
-set the variable on the command line, e.g.
-
-```shell
-$ make USE_MMAP_MAP_STACK=1 all
-```
-
-Another option one might consider toggling is `UNIQUE_FIBERS` as since
-commit
-[ocaml/ocaml#e12b508](https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100)
-stock OCaml fibers are uniquely identifiable. Under the hood this
-library clones fibers. By default this clone will be an exact copy of
-the original fiber, meaning that the clone and original fiber will
-share the same identity. If unique identities are important, then
-setting `UNIQUE_FIBERS=1` will ensure that each clone gets its own
-unique identity.
-
-The Makefile contains an `install` rule, which installs the built
-library under your current OPAM switch, i.e.
+To install the library built from source simply invoke the `install`
+rule:
 
 ```shell
 $ make install
 ```
 
-Similarly, the library can easily be uninstalled by invoking the
-appropriate rule, i.e.
+Similarly to uninstall the library again invoke the `uninstall` rule:
 
 ```shell
 $ make uninstall
 ```
+
+## Configurable options
+
+The primary reason to build from source is to toggle configurable
+options of this library, which are not readily available via OPAM
+install. Currently, the following options are supported:
+
+* `UNIQUE_FIBERS` (default: disabled): Since commit
+[ocaml/ocaml#e12b508](https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100)
+stock OCaml fibers have been equipped with unique identifiers. Enable
+this option to preserve unique identities amongst fibers as without
+this option a fiber clone is an exact copy of the original fiber,
+including its identity. By enabling this option, a cloned fiber will
+be assigned a new unique identity.
+* `USE_MMAP_MAP_STACK` (default: disabled): Enable to use [virtual
+memory mapped
+stacks](https://man7.org/linux/man-pages/man2/mmap.2.html) rather than
+stacks allocated by malloc.
+
+Configurable options are toggled directly on the command line as a
+prefix to the `make` command. For instance, the following enables
+unique fiber identities and mmap stacks:
+
+```shell
+$ UNIQUE_FIBERS=1 USE_MMAP_MAP_STACK=1 make all
+```
+
+Setting an option to `1` enables it, whereas any other possible
+assignment disables it.
 
 ## The multi-shot continuations interface
 
