@@ -1,4 +1,4 @@
-name: Multicont build, install, & running examples suite
+name: Multicont build, install, and running examples
 
 on:
   pull_request:
