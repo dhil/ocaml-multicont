@@ -31,9 +31,11 @@ $ opam pin multicont git@github.com:dhil/ocaml-multicont.git
 ### Building and installing from source
 
 It is straightforward to build and install this library from source as
-its only dependencies are an OCaml 5.0+ compiler, dune, and
-dune-configurator. To build the whole library simply invoke the `all`
-rule, i.e.
+its only dependencies are an [OCaml
+5.0+](https://github.com/ocaml/ocaml) compiler,
+[dune](https://github.com/ocaml/dune), and
+[dune-configurator](https://github.com/ocaml/dune). To build the whole
+library simply invoke the `all` rule, i.e.
 
 ```shell
 $ make all
