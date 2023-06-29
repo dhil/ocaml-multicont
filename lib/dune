@@ -1,7 +1,7 @@
 (library
  (name multicont)
  (public_name multicont)
- (modes byte native)
+ (modes byte best)
  (foreign_stubs
   (language c)
   (mode byte)
