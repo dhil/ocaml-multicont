@@ -354,7 +354,7 @@ let _ =
 
   Essentially, we are witnessing the ordering between the user-defined
   operation `Twice` and the native operation for array creation. If we
-  were to swap, then we get the behaviour we may have expected
+  were to swap them, then we get the behaviour we may have expected
   initially.  *)
 
 let init' : int -> (int -> bool) -> bool array
@@ -379,7 +379,7 @@ let _ =
   match Effect.Deep.match_with init_vec' 1 htwice with
   | [[|false|]; [|false|]] -> ()
   | _ -> assert false
-(* Here the two array are nominally (i.e. they have the same identity)
+(* Here the two arrays are nominally (i.e. they have the same identity)
    equivalent. *)
 let _ =
   match Effect.Deep.match_with init_vec' 2 htwice with
