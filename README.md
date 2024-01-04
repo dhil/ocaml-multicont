@@ -186,6 +186,15 @@ times.
 
 ## Cautionary tales in programming with multi-shot continuations in OCaml
 
+One must exercise caution when programming with multi-shot
+continuations in OCaml, as the programming model for continuations was
+designed with single-shot continuations in mind. Consequently, there
+are a couple of hazards that one should be aware of. Broadly, speaking
+we can classify these hazards into two categories: compiler
+optimisations and effect ordering.
+
+### Compiler optimisation: Heap to stack conversion
+
 The OCaml compiler and runtime make some assumptions that are false in
 the presence of multi-shot continuations. This phenomenon is perhaps
 best illustrated by an example. Concretely, we can consider some
@@ -261,6 +270,136 @@ with `ocamlc` or `ocamlopt`. As of writing, the read-eval-print loop
 interpreter does not perform the heap to stack conversion, therefore
 running it through `ocaml` will cause `heap2stack` to trigger the
 assertion failure as desired.
+
+### Effect ordering: Array initialisation
+
+We can use multi-shot continuations to inadvertently observe
+implementation details, which would otherwise be unobservable (inside
+the language). Lets illustrate this phenomenon with a concrete
+example.
+
+```ocaml
+(* An illustration of how effect ordering is observable with
+ * multi-shot continuations (OCaml 5.1.1).
+ * file: efford.ml
+ * compile: ocamlopt -I $(opam var lib)/multicont multicont.cmxa efford.ml
+ * run: ./a.out  *)
+
+(* We first require a little bit of setup. The following declares an
+   operation `Twice' which we use to implement multiple returns. *)
+type _ Effect.t += Twice : bool Effect.t
+
+(* The handler `htwice' interprets `Twice' by enumerating the possible
+   outcomes of its continuation. *)
+let htwice : 'a. ('a, 'a list) Effect.Deep.handler
+  = { retc = (fun x -> [x])
+    ; exnc = (fun e -> raise e)
+    ; effc = (fun (type a) (eff : a Effect.t) ->
+      let open Effect.Deep in
+      match eff with
+      | Twice -> Some (fun (k : (a, _) continuation) ->
+          let xs = continue (Multicont.Deep.clone_continuation k) true in
+          let ys = continue k false in
+          xs @ ys)
+      | _ -> None) }
+
+(* This function uses the `Twice` operation to initialise a bit vector
+   of length `n`. *)
+let init_vec : int -> bool array
+  = fun n ->
+  Array.init n (fun _ -> Effect.perform Twice)
+
+(* The array backing the bit vector is imperative, thus one might
+   expect the interpreting `init_vec 1` with `htwice` to evaluate to
+   `[[|false|];[|false|]]`, where the two arrays have the same
+   identity. Lets see what it evaluates to... *)
+let _ =
+  match Effect.Deep.match_with init_vec 1 htwice with
+  | [[|true|]; [|false|]] -> ()
+  | _ -> assert false
+(* We get two distinct arrays. Lets see what happens if we initialise
+   a vector of length 2: *)
+let _ =
+  match Effect.Deep.match_with init_vec 2 htwice with
+  | [[|true; false|]; [|true; false|]; [|false; false|]; [|false; false|]] -> ()
+  | _ -> assert false
+(* We have four arrays, but only two of them are distinct (both
+   structurally and nominally). What about vectors of length 3? *)
+let _ =
+  match Effect.Deep.match_with init_vec 3 htwice with
+  | [[|true; false; false|] ; [|true; false; false|] ; [|true; false; false|] ; [|true; false; false|];
+     [|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|]] -> ()
+  | _ -> assert false
+(* We have eight arrays, but again only two of them are distinct. This
+   pattern continues as we increase `n`. So what's going on? It turns
+   out that we are observing an implementation detail of
+   `Array.init`. Its definition is:
+
+     let init l f =
+       if l = 0 then [||] else
+       if l < 0 then invalid_arg "Array.init" else
+       let res = create l (f 0) in (* !! *)
+       for i = 1 to pred l do
+         unsafe_set res i (f i)
+       done;
+       res
+
+  The line with the code responsible for the behaviour is highlighted
+  by the (* !! *) comment. Here we evaluate `f 0`, i.e. `perform
+  Twice`, _before_ we allocate the array, meaning the second
+  invocation of the continuation of the first `Twice` causes another
+  array to be allocated, explaining why we always have two distinct
+  arrays and why the first cell is not set to `false` in the first
+  `n/2` arrays of the list.
+
+  Essentially, we are witnessing the ordering between the user-defined
+  operation `Twice` and the native operation for array creation. If we
+  were to swap, then we get the behaviour we may have expected
+  initially.  *)
+
+let init' : int -> (int -> bool) -> bool array
+  = fun l f ->
+  if l = 0 then [||] else
+  if l < 0 then invalid_arg "Array.init" else
+  let res = Array.make l true in
+  Array.set res 0 (f 0);
+  for i = 1 to pred l do
+    Array.unsafe_set res i (f i)
+  done;
+  res
+
+(* Similar to `init_vec`, except we initialise the bit vector with
+   our modified `init'`. *)
+let init_vec' : int -> bool array
+  = fun n ->
+  init' n (fun _ -> Effect.perform Twice)
+
+(* Lets rerun the examples from before. *)
+let _ =
+  match Effect.Deep.match_with init_vec' 1 htwice with
+  | [[|false|]; [|false|]] -> ()
+  | _ -> assert false
+(* Here the two array are nominally (i.e. they have the same identity)
+   equivalent. *)
+let _ =
+  match Effect.Deep.match_with init_vec' 2 htwice with
+  | [[|false; false|]; [|false; false|]; [|false; false|]; [|false; false|]] -> ()
+  | _ -> assert false
+let _ =
+  match Effect.Deep.match_with init_vec' 3 htwice with
+  | [[|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|];
+     [|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|]] -> ()
+  | _ -> assert false
+(* Evidently, the contents of the first cell is overridden by the
+   second invocation of the initial continuation of `Twice`. *)
+```
+
+These behaviours are instances of the behaviour of composing
+nondeterminism and state to yield either backtrackable or
+non-backtrackable state. Either behaviour can be desirable. The word
+of caution here is that certain implementation details of higher-order
+functions may be observed to a greater extent than is possible with
+single-shot continuations or exceptions.
 
 ## Notes on the implementation
 
