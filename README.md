@@ -390,7 +390,7 @@ let _ =
   | [[|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|];
      [|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|]] -> ()
   | _ -> assert false
-(* Evidently, the contents of the first cell is overridden by the
+(* Evidently, the contents of the first cell are overridden by the
    second invocation of the initial continuation of `Twice`. *)
 ```
 
