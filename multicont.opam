@@ -10,9 +10,10 @@ tags: ["multi-shot continuations" "effect handlers"]
 homepage: "https://github.com/dhil/ocaml-multicont"
 bug-reports: "https://github.com/dhil/ocaml-multicont/issues"
 depends: [
-  "ocaml" { >= "5.0.0"}
+  "ocaml" {":" >= "5.0.0"}
   "dune" {>= "3.8"}
-  "dune-configurator" { >= "3.8"}
+  "dune-configurator" {":" >= "3.8"}
+  "ounit2" {with-test}
   "odoc" {with-doc}
 ]
 build: [
