@@ -1,0 +1,6 @@
+(tests
+ (names async
+        choice
+        generic_count
+        nqueens)
+ (libraries multicont ounit2))

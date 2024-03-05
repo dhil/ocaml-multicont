@@ -68,3 +68,6 @@ jobs:
           diff <(opam exec -- dune exec ./supervised.bc.exe) <(echo -e "Parent joining with Child 1\nChild 1 failed!\nChild 2 failed!\nChild 1 failed!\nChild 2 failed!\nChild 2 failed!\nChild 1 succeeded!\nChild 1 joining with Child 2\nChild 2 succeeded!\nChild 2 succeeded!\nChild 2 succeeded!\nChild 1 joined with Child 2\nParent joined with Child 1")
           diff <(opam exec -- dune exec ./choice.bc.exe) <(echo "(3, 4, 5)")
         shell: bash
+      - name: Run tests
+        run: opam exec -- dune runtest
+        shell: bash

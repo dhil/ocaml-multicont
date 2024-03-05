@@ -22,6 +22,10 @@ release:
 	dune-release opam pkg --build-dir=$(BUILD_DIR)
 	dune-release opam submit --build-dir=$(BUILD_DIR)
 
+.PHONY: test
+test:
+	dune runtest
+
 # Clean up rule
 .PHONY: clean
 clean:
