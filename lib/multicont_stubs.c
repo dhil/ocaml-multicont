@@ -16,8 +16,20 @@
 #include "fiber_primitives.h" // provides [MULTICONT_NEXT_FIBER_ID]
                               // generator.
 
+// NOTE(dhil): The representation of continuations was changed in
+// OCaml 5.2. In OCaml 5.2+ a continuation is a pair of stack segments
+// (first_segment, last_segment) which together forms the complete
+// stack chain from effect invocation site to handle site. Here,
+// first_segment is the segment where the effect was initially
+// performed and last_segment is segment that had the appropriate
+// handler installed.
+//
+// Prior to OCaml 5.2 the continuation was simply a pointer to
+// previous stack segment that performed or reperformed the effect.
 #if OCAML_VERSION_MAJOR >= 5 && OCAML_VERSION_MINOR > 1
-#error "multicont is not yet supported on OCaml 5.2+"
+#define MULTICONT52 1
+#else
+#define MULTICONT52 0
 #endif
 
 value multicont_promote(value k) {
@@ -26,7 +38,11 @@ value multicont_promote(value k) {
 
   value null_stk = Val_ptr(NULL);
 
+#if MULTICONT52
+  r = caml_alloc_2(Cont_tag, null_stk, null_stk);
+#else
   r = caml_alloc_1(Cont_tag, null_stk);
+#endif
 
   // Move the stack from [k] to [r]
   {
@@ -34,6 +50,10 @@ value multicont_promote(value k) {
     // [caml_continuation_replace]
     CAMLnoalloc;
     caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
+#if MULTICONT52
+    Field(r, 1) = Field(k, 1); // TODO(dhil): Do we need to use an
+                               // atomic read or a barrier here?
+#endif
   }
 
   CAMLreturn(r);
@@ -51,9 +71,16 @@ value multicont_clone_continuation(value k) {
                     *clone,     // clone of [current]
                     *result;    // clone of [source]
   struct stack_info **link = &result;
+#if MULTICONT52
+  struct stack_info *last_segment; // the last segment of the stack chain
+#endif
 
   // Allocate an OCaml object with the continuation tag
+#if MULTICONT52
+  kclone = caml_alloc_2(Cont_tag, null_stk, null_stk);
+#else
   kclone = caml_alloc_1(Cont_tag, null_stk);
+#endif
   {
     // Prevent the GC from running between the use of
     // [caml_continuation_use] and [caml_continuation_replace]
@@ -97,10 +124,17 @@ value multicont_clone_continuation(value k) {
       clone->sp = Stack_high(clone) - space_used;
 
       // Prepare to handle the next stack segment
+#if MULTICONT52
+      last_segment = clone;
+#endif
       *link = clone;
       link = &Stack_parent(clone);
       current = Stack_parent(current);
     }
+
+#if MULTICONT52
+    Field(kclone, 1) = Val_ptr(last_segment);
+#endif
 
     // Reattach the [source] stack to [k] (necessary as
     // [caml_continuation_use] deattaches it) and attach [result] to
