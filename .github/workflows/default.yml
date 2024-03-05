@@ -31,10 +31,8 @@ jobs:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext: false
 
-      - name: Install dune
-        run: |
-          opam install dune
-          opam install dune-configurator
+      - name: Install dune and ounit2
+        run: opam install dune dune-configurator ounit2
         shell: bash
 
       - name: Install library
