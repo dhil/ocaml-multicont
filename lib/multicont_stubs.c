@@ -6,16 +6,19 @@
 #include <caml/fiber.h>    // provides Stack_* macros, [struct stack_info]
 #include <caml/memory.h>   // provides CAMLparam* and CAMLreturn* macros
 #include <caml/misc.h>     // provides [CAMLnoalloc] macro
+#include <caml/version.h>  // provides OCaml versioning macros
 
 #ifdef NATIVE_CODE
 #include <caml/stack.h>
 #include <caml/frame_descriptors.h>
 #endif
 
-#include "fiber_primitives.h" // provides copies of the hidden
-                              // [alloc_stack_noexc] and
-                              // [rewrite_exception_stack] functions
-                              // from [fiber.c]
+#include "fiber_primitives.h" // provides [MULTICONT_NEXT_FIBER_ID]
+                              // generator.
+
+#if OCAML_VERSION_MAJOR >= 5 && OCAML_VERSION_MINOR > 1
+#error "multicont is not yet supported on OCaml 5.2+"
+#endif
 
 value multicont_promote(value k) {
   CAMLparam1(k);
