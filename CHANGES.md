@@ -1,4 +1,18 @@
-# Multicont version 1.0.1 (latest)
+# Multicont version 1.0.2 (latest)
+
+This release adds support for the anticipated release of OCaml 5.2.
+
+Changes:
+
+* Patch #7: OCaml 5.2 support (thanks to kit-ty-kate for the issue
+  report #6; thanks to David Allsopp for reviewing the patch).  The
+  change accounts for the new continuation representation.
+* Added a basic testsuite runnable via `dune runtest`.
+* Fixed a memory leak in the rollback parsing example.
+* Added an entry about subtle interactions of unrestricted and linear
+  effects in the "Cautionary tales" section of the README.
+
+# Multicont version 1.0.1
 
 This release is a purely administrative release which ports the build
 infrastructure to [dune](https://github.com/ocaml/dune) in order to
