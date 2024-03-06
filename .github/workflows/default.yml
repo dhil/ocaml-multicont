@@ -18,7 +18,7 @@ jobs:
           - ubuntu-22.04
         ocaml-compiler:
           - 5.1.0
-          - 5.2.0+trunk
+          - ocaml-variants.5.2.0+trunk
 
     runs-on: ${{ matrix.os }}
 
