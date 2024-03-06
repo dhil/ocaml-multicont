@@ -16,11 +16,11 @@ uninstall:
 
 .PHONY: release
 release:
-	dune-release tag v1.0.2 --build-dir=$(BUILD_DIR)
-	dune-release distrib --build-dir=$(BUILD_DIR)
-	dune-release publish distrib --build-dir=$(BUILD_DIR)
-	dune-release opam pkg --build-dir=$(BUILD_DIR)
-	dune-release opam submit --build-dir=$(BUILD_DIR)
+	dune-release tag v1.0.2
+	dune-release distrib
+	dune-release publish
+	dune-release opam pkg
+	dune-release opam submit
 
 .PHONY: test
 test:
