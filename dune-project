@@ -19,9 +19,9 @@
  (name multicont)
  (synopsis "Multi-shot continuations in OCaml")
  (description "This library provides facilities for programming with multi-shot continuations in OCaml")
- (depends (ocaml (>= : 5.0.0))
+ (depends (ocaml (>= 5.0.0))
            dune
-          (dune-configurator (>= : 3.8))
+          (dune-configurator (>= 3.8))
           (ounit2 :with-test))
  (tags
   ("multi-shot continuations" "effect handlers")))
