@@ -32,7 +32,7 @@
 #define MULTICONT52 0
 #endif
 
-value multicont_promote(value k) {
+CAMLprim value multicont_promote(value k) {
   CAMLparam1(k);
   CAMLlocal1(r);
 
@@ -51,15 +51,14 @@ value multicont_promote(value k) {
     CAMLnoalloc;
     caml_continuation_replace(r, Ptr_val(caml_continuation_use(k)));
 #if MULTICONT52
-    Field(r, 1) = Field(k, 1); // TODO(dhil): Do we need to use an
-                               // atomic read or a barrier here?
+    caml_modify(&Field(r, 1), Field(k, 1));
 #endif
   }
 
   CAMLreturn(r);
 }
 
-value multicont_clone_continuation(value k) {
+CAMLprim value multicont_clone_continuation(value k) {
   CAMLparam1(k);      // input continuation object
   CAMLlocal1(kclone); // resulting continuation object clone
 
@@ -133,7 +132,7 @@ value multicont_clone_continuation(value k) {
     }
 
 #if MULTICONT52
-    Field(kclone, 1) = Val_ptr(last_segment);
+    caml_modify(&Field(kclone, 1), Val_ptr(last_segment));
 #endif
 
     // Reattach the [source] stack to [k] (necessary as
@@ -146,7 +145,8 @@ value multicont_clone_continuation(value k) {
   CAMLreturn(kclone);
 }
 
-value multicont_drop_continuation(value k) {
+CAMLprim value multicont_drop_continuation(value k) {
+  CAMLparam1(k);
   struct stack_info *current,
                     *next = Ptr_val(caml_continuation_use(k));
   while (next != NULL) {
@@ -154,5 +154,5 @@ value multicont_drop_continuation(value k) {
     next = Stack_parent(current);
     caml_free_stack(current);
   }
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
