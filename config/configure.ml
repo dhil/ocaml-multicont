@@ -1,8 +1,7 @@
 module C = Configurator.V1
 
-let common_flags = ["-Wall"; "-Wextra"; "-Wpedantic"; "-Werror"]
-let byte_flags = ref common_flags
-let native_flags = ref ("-DNATIVE_CODE" :: common_flags)
+let byte_flags = ref []
+let native_flags = ref ["-DNATIVE_CODE"]
 
 let add_native_flag flag =
   native_flags := flag :: !native_flags
