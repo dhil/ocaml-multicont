@@ -1,6 +1,10 @@
+;; Copy examples/
+(copy_files# ../examples/*.ml)
+
 (tests
  (names async
         choice
         generic_count
-        nqueens)
+        nqueens
+        supervised)
  (libraries multicont ounit2))
