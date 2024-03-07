@@ -88,8 +88,10 @@ CAMLprim value multicont_clone_continuation(value k) {
     // Retrieve the stack pointed to by the continuation [k]
     source = current = Ptr_val(caml_continuation_use(k));
 
+    // NOTE: We know now that [current] is non-null, as otherwise
+    // [caml_continuation_use] would have raised an exception.
     // Copy each stack segment in the chain
-    while (current != NULL) {
+    do {
       space_used = Stack_high(current) - (value*)current->sp;
 
       int64_t fiber_id;
@@ -129,7 +131,7 @@ CAMLprim value multicont_clone_continuation(value k) {
       *link = clone;
       link = &Stack_parent(clone);
       current = Stack_parent(current);
-    }
+    } while (current != NULL);
 
 #if MULTICONT52
     caml_modify(&Field(kclone, 1), Val_ptr(last_segment));
