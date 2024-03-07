@@ -1,4 +1,4 @@
-;; Copy examples/
+;; Copy examples
 (copy_files# ../examples/*.ml)
 
 (tests
@@ -7,4 +7,5 @@
         generic_count
         nqueens
         supervised)
+ (build_if %{arch_sixtyfour})
  (libraries multicont))
