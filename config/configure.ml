@@ -1,6 +1,6 @@
 module C = Configurator.V1
 
-let common_flags = ["-Wall"; "-Wextra"; "-Wconversion"; "-Wno-sign-conversion"; "-Wpedantic"; "-Werror"]
+let common_flags = ["-Wall"; "-Wextra"; "-Wpedantic"; "-Werror"]
 let byte_flags = ref common_flags
 let native_flags = ref ("-DNATIVE_CODE" :: common_flags)
 
