@@ -7,4 +7,4 @@
         generic_count
         nqueens
         supervised)
- (libraries multicont ounit2))
+ (libraries multicont))
