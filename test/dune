@@ -1,12 +1,35 @@
-;; Copy examples
-(copy_files# ../examples/*.ml)
+(rule
+ (with-stdout-to async.output
+  (setenv "LD_LIBRARY_PATH" "."
+    (run ../examples/async.exe))))
 
-(tests
- (names async
-        choice
-        generic_count
-        nqueens
-        supervised)
- (action
-   (bash "env LD_LIBRARY_PATH=. ../examples/%{test}"))
- (libraries multicont))
+(rule
+ (alias runtest)
+ (action (diff async.expected async.output)))
+
+(rule
+ (with-stdout-to choice.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run ../examples/choice.exe))))
+
+(rule
+ (alias runtest)
+ (action (diff choice.expected choice.output)))
+
+(rule
+ (with-stdout-to generic_count.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run ../examples/generic_count.exe))))
+
+(rule
+ (alias runtest)
+ (action (diff generic_count.expected generic_count.output)))
+
+(rule
+ (with-stdout-to supervised.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run ../examples/supervised.exe))))
+
+(rule
+ (alias runtest)
+ (action (diff supervised.expected supervised.output)))
