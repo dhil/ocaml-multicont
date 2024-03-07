@@ -1,0 +1,3 @@
+(rule
+ (with-stdout-to native_compiler
+  (bash "%{ocamlc} -config | grep 'native_compiler: ' | grep -oE '[^ ]+$'")))

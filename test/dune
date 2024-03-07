@@ -1,35 +1,86 @@
+;; Async tests
+(subdir
+  native
+ (rule
+ (with-stdout-to compiler
+  (bash "$(%{ocamlc} -config | grep 'native_compiler: ' | grep -oE '[^ ]+$') || echo 'false'"))))
+
 (rule
  (with-stdout-to async.output
   (setenv "LD_LIBRARY_PATH" "."
-    (run ../examples/async.exe))))
+    (run %{workspace_root}/examples/async.exe))))
 
 (rule
  (alias runtest)
+ (enabled_if (= %{read:native/compiler} "true\n"))
  (action (diff async.expected async.output)))
 
 (rule
- (with-stdout-to choice.output
+ (with-stdout-to async.bc.output
   (setenv "LD_LIBRARY_PATH" "."
-   (run ../examples/choice.exe))))
+    (run %{workspace_root}/examples/async.bc.exe))))
 
 (rule
  (alias runtest)
+ (action (diff async.expected async.bc.output)))
+
+;; Choice tests
+(rule
+ (with-stdout-to choice.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run %{workspace_root}/examples/choice.exe))))
+
+(rule
+ (alias runtest)
+ (enabled_if (= %{read:native/compiler} "true\n"))
  (action (diff choice.expected choice.output)))
 
 (rule
- (with-stdout-to generic_count.output
+ (with-stdout-to choice.bc.output
   (setenv "LD_LIBRARY_PATH" "."
-   (run ../examples/generic_count.exe))))
+   (run %{workspace_root}/examples/choice.bc.exe))))
 
 (rule
  (alias runtest)
+ (action (diff choice.expected choice.bc.output)))
+
+;; Generic count tests
+(rule
+ (with-stdout-to generic_count.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run %{workspace_root}/examples/generic_count.exe))))
+
+(rule
+ (alias runtest)
+ (enabled_if (= %{read:native/compiler} "true\n"))
  (action (diff generic_count.expected generic_count.output)))
 
 (rule
- (with-stdout-to supervised.output
+ (with-stdout-to generic_count.bc.output
   (setenv "LD_LIBRARY_PATH" "."
-   (run ../examples/supervised.exe))))
+   (run %{workspace_root}/examples/generic_count.bc.exe))))
 
 (rule
  (alias runtest)
+ (action (diff generic_count.expected generic_count.bc.output)))
+
+;; Supervised tests
+(rule
+ (with-stdout-to supervised.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run %{workspace_root}/examples/supervised.exe))))
+
+(rule
+ (alias runtest)
+ (enabled_if (= %{read:native/compiler} "true\n"))
  (action (diff supervised.expected supervised.output)))
+
+(rule
+ (with-stdout-to supervised.bc.output
+  (setenv "LD_LIBRARY_PATH" "."
+   (run %{workspace_root}/examples/supervised.bc.exe))))
+
+(rule
+ (alias runtest)
+ (action (diff supervised.expected supervised.bc.output)))
+
