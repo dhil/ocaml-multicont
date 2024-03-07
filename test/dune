@@ -7,5 +7,6 @@
         generic_count
         nqueens
         supervised)
- (build_if %{arch_sixtyfour})
+ (action
+   (bash "env LD_LIBRARY_PATH=. ../examples/%{test}"))
  (libraries multicont))
