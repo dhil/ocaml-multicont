@@ -34,3 +34,6 @@ _opam/
 # Temporaries
 *~
 \#*
+
+# Ignore tests.inc modifications
+test/tests.inc
