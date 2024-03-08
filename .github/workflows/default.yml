@@ -43,5 +43,5 @@ jobs:
         shell: bash
 
       - name: Run tests
-        run: opam exec -- dune runtest
+        run: opam exec -- dune build @runtest
         shell: bash

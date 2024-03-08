@@ -24,7 +24,7 @@ release:
 
 .PHONY: test
 test:
-	dune runtest
+	dune build @runtest
 
 # Clean up rule
 .PHONY: clean
