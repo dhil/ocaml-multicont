@@ -50,7 +50,8 @@ jobs:
         run: |
           opam exec -- dune build
           opam exec -- dune install
-        env: UNIQUE_FIBERS=1
+        env:
+          UNIQUE_FIBERS: 1
         shell: bash
 
       - name: Rerun tests
