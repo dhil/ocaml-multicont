@@ -10,7 +10,7 @@
 // uses the non-negative range of `int64_t`, therefore to ensure
 // uniqueness amongst all fibers, we can use the negative range of
 // `int64_t` to assign identifiers to cloned fibers.
-extern _Atomic int64_t multicont_fiber_id;
+static _Atomic int64_t multicont_fiber_id;
 #define MULTICONT_NEXT_FIBER_ID atomic_fetch_sub(&multicont_fiber_id, 1)
 #endif
 

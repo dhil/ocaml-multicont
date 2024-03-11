@@ -45,3 +45,14 @@ jobs:
       - name: Run tests
         run: opam exec -- dune build @runtest
         shell: bash
+
+      - name: Rebuild library with UNIQUE_FIBERS
+        run: |
+          opam exec -- dune build
+          opam exec -- dune install
+        env: UNIQUE_FIBERS=1
+        shell: bash
+
+      - name: Rerun tests
+        run: opam exec -- dune build @runtest
+        shell: bash

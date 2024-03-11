@@ -17,14 +17,14 @@ let detect_native_compiler ocamlc =
     List.exists (fun s -> String.equal s "native_compiler: true") lines
   with _ -> false
 
-let make_stanzas native testname =
+let make_diff_stanzas native testname =
   let stanzas exe_prefix =
     let output =
       Printf.sprintf
         "(rule\n\
          \ (with-stdout-to %s.output\n\
          \ (setenv \"LD_LIBRARY_PATH\" \".\"\n\
-         \ (run %s/examples/%s.exe))))"
+         \   (run %s/examples/%s.exe))))"
         exe_prefix "%{workspace_root}" exe_prefix
     in
     let runtest =
@@ -46,9 +46,30 @@ let write_content filename stanzas =
   in
   C.Flags.write_lines filename stanzas
 
+(* Currently only for the test/lib/unique_fibers.ml test *)
+let make_nondiff_stanzas native testname : string list =
+  let stanza exe_prefix =
+    Printf.sprintf
+      "(rule\n\
+       \ (alias runtest)\n\
+       \ (action\n\
+       \   (setenv \"TEST_UNIQUE_FIBERS\" \"%s\"\n\
+       \     (setenv \"LD_LIBRARY_PATH\" \".\"\n\
+       \       (run %s/test/lib/%s.exe)))))"
+      (match Sys.getenv_opt "UNIQUE_FIBERS" with
+       | Some "1" -> "true" | _ -> "false")
+      "%{workspace_root}" exe_prefix
+  in
+  let bc = stanza (Printf.sprintf "%s.bc" testname) in
+  let nc = if native then [stanza testname] else [] in
+  (Printf.sprintf "; %s tests" testname) :: bc :: "" :: nc
+
 let _ =
-  let testnames =
+  let diff_testnames =
     ["async"; "choice"; "generic_count"; "nqueens"; "supervised"]
+  in
+  let nondiff_testnames =
+    ["unique_fibers"]
   in
   let incfile = ref "tests.inc" in
   let is_native_available = ref false in
@@ -61,4 +82,6 @@ let _ =
       "Name for the tests sexp output (default tests.inc)"
     ]
     (fun _ ->
-      write_content !incfile (List.concat (List.map (make_stanzas !is_native_available) testnames)))
+      let diff_tests = List.map (make_diff_stanzas !is_native_available) diff_testnames in
+      let nondiff_tests = List.map (make_nondiff_stanzas !is_native_available) nondiff_testnames in
+      write_content !incfile (List.concat [List.concat diff_tests; List.concat nondiff_tests]))

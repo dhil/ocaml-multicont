@@ -30,3 +30,4 @@ test:
 .PHONY: clean
 clean:
 	dune clean --build-dir=$(BUILD_DIR)
+	echo -n "; intentionally left empty" > test/tests.inc
