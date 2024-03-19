@@ -13,17 +13,21 @@ let test unique_fibers_enabled =
       | Clone -> Some (fun (k : (a, _) continuation) ->
                      let open Multicont_testlib.Inspect_fiber in
                      let k' = clone_continuation k in
+                     let k'' = clone_continuation k' in
                      (* NOTE(dhil): The fiber and continuation
                         representation is the same for deep and
                         shallow continuations. *)
                      result := [ fiber_id (Obj.magic k)
-                               ; fiber_id (Obj.magic k')])
+                               ; fiber_id (Obj.magic k')
+                               ; fiber_id (Obj.magic k'')])
       | _ -> None ) };
   match !result with
-  | [original_id; clone_id] when unique_fibers_enabled ->
-     assert (not (Int64.equal original_id clone_id))
-  | [original_id; clone_id] when not unique_fibers_enabled ->
-     assert (Int64.equal original_id clone_id)
+  | [original_id; clone_id; clone_clone_id] when unique_fibers_enabled ->
+     assert (not (Int64.equal original_id clone_id));
+     assert (not (Int64.equal clone_id clone_clone_id))
+  | [original_id; clone_id; clone_clone_id ] when not unique_fibers_enabled ->
+     assert (Int64.equal original_id clone_id);
+     assert (Int64.equal clone_id clone_clone_id)
   | _ -> assert false
 
 let _ =
