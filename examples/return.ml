@@ -43,10 +43,12 @@ module Alg(D : sig type t end) : ALG with type t := D.t = struct
     let open Effect.Deep in
     let open Multicont.Deep in
     let conts = ref [] in
-    let pop () =
+    let backup ans =
       match !conts with
-      | cont :: conts' -> conts := conts'; cont
-      | _ -> assert false
+      | r :: conts' ->
+         conts := conts';
+         resume r (Done ans)
+      | _ -> ans
     in
     let push r =
       conts := r :: !conts
@@ -54,9 +56,7 @@ module Alg(D : sig type t end) : ALG with type t := D.t = struct
     { retc = (fun ans -> ans)
     ; exnc =
         (function
-           Return ans ->
-            let r = pop () in
-            resume r (Done ans)
+           Return ans -> backup ans
          | e -> raise e)
     ; effc = (fun (type a) (eff : a Effect.t) ->
       match eff with
