@@ -33,3 +33,9 @@
  (modules async)
  (modes byte_complete native)
  (libraries multicont))
+
+(executable
+ (name return)
+ (modules return)
+ (modes byte_complete native)
+ (libraries multicont))
