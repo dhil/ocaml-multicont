@@ -8,6 +8,8 @@
 #include <caml/misc.h>     // provides [CAMLnoalloc] macro
 #include <caml/version.h>  // provides OCaml versioning macros
 
+#include <string.h>
+
 #ifdef NATIVE_CODE
 #include <caml/stack.h>
 #include <caml/frame_descriptors.h>
