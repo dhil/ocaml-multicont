@@ -1,4 +1,20 @@
-# Multicont version 1.0.2 (latest)
+# Multicont version 1.0.3 (latest)
+
+This release restores compatibility with macOS (14.4.1) when using
+clang 15 or greater.
+
+Changes:
+
+* Patch #8: Explicit declaration of `memcpy` to fix compilation error
+  when using clang on macOS (thanks to @tmcgilchrist).
+* Fixed a regression where enabling feature flag `UNIQUE_FIBERS`
+  caused compilation to fail.
+* Spring cleaning: Removed unused header imports.
+* Added an example illustrating how to use the power of multishot
+  continuation to simulate the `return` operator (e.g. as found in
+  C/C++/Rust/etc) using a single handler.
+
+# Multicont version 1.0.2
 
 This release adds support for the anticipated release of OCaml 5.2.
 
