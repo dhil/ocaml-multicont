@@ -16,7 +16,7 @@ uninstall:
 
 .PHONY: release
 release:
-	dune-release tag v1.0.2
+	dune-release tag v1.0.3
 	dune-release distrib
 	dune-release publish
 	dune-release opam pkg
