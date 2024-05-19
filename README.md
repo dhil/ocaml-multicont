@@ -62,7 +62,7 @@ $ make uninstall
 
 The primary reason to build from source is to toggle configurable
 options of this library, which are not readily available via OPAM
-install. Currently, the following options are supported:
+install. Currently, there is only one optional build:
 
 * `UNIQUE_FIBERS` (default: disabled): Since commit
 [ocaml/ocaml#e12b508](https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100)
@@ -71,17 +71,13 @@ this option to preserve unique identities amongst fibers as without
 this option a fiber clone is an exact copy of the original fiber,
 including its identity. By enabling this option, a cloned fiber will
 be assigned a new unique identity.
-* `USE_MMAP_MAP_STACK` (default: disabled): Enable to use [virtual
-memory mapped
-stacks](https://man7.org/linux/man-pages/man2/mmap.2.html) rather than
-stacks allocated by malloc.
 
 Configurable options are toggled directly on the command line as a
 prefix to the `make` command. For instance, the following enables
-unique fiber identities and mmap stacks:
+unique fiber identities:
 
 ```shell
-$ UNIQUE_FIBERS=1 USE_MMAP_MAP_STACK=1 make all
+$ UNIQUE_FIBERS=1 make all
 ```
 
 Setting an option to `1` enables it, whereas any other possible

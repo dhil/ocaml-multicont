@@ -11,8 +11,8 @@ let add_flag flag =
   add_native_flag flag
 
 let () =
-  let options = [ "USE_MMAP_MAP_STACK"
-                ; "UNIQUE_FIBERS"]
+  let options =
+    [ "UNIQUE_FIBERS" ]
   in
   let toggle option =
     match Sys.getenv_opt option with

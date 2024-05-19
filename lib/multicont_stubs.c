@@ -105,10 +105,10 @@ CAMLprim value multicont_clone_continuation(value k) {
 
       // Allocate a fresh stack segment the size of [current]
       clone = caml_alloc_stack_noexc(Stack_high(current) - Stack_base(current),
-                                          Stack_handle_value(current),
-                                          Stack_handle_exception(current),
-                                          Stack_handle_effect(current),
-                                          fiber_id);
+                                     Stack_handle_value(current),
+                                     Stack_handle_exception(current),
+                                     Stack_handle_effect(current),
+                                     fiber_id);
       // Check whether allocation failed
       if (!clone) caml_raise_out_of_memory();
 
@@ -160,3 +160,5 @@ CAMLprim value multicont_drop_continuation(value k) {
   }
   CAMLreturn(Val_unit);
 }
+
+#undef MULTICONT52
