@@ -15,4 +15,4 @@
 
 (rule
  (targets c_byte_flags.sexp c_native_flags.sexp)
- (action (run ../config/configure.exe)))
+ (action (run ../config/configure.exe %{profile})))

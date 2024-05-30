@@ -4,15 +4,15 @@ BUILD_DIR:=$(ROOT)/_build
 
 .PHONY: all
 all: dune-project
-	dune build --build-dir=$(BUILD_DIR)
+	dune build --profile=dev --build-dir=$(BUILD_DIR)
 
 .PHONY: install
 install:
-	dune install --build-dir=$(BUILD_DIR)
+	dune install --profile=dev --build-dir=$(BUILD_DIR)
 
 .PHONY: uninstall
 uninstall:
-	dune uninstall --build-dir=$(BUILD_DIR)
+	dune uninstall --profile=dev --build-dir=$(BUILD_DIR)
 
 .PHONY: release
 release:

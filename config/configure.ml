@@ -11,6 +11,23 @@ let add_flag flag =
   add_native_flag flag
 
 let () =
+  let is_dev_profile =
+    try
+      let arg = Array.get Sys.argv 1 in
+      String.equal arg "dev"
+    with
+    | Invalid_argument _ -> false
+  in
+  let () =
+    if is_dev_profile then
+      let debug_options =
+        [ "-Wall"; "-Wextra"; "-Wpedantic"
+        ; "-Wformat=2"; "-Wno-unused-parameter"; "-Wshadow"
+        ; "-Wwrite-strings"; "-Wstrict-prototypes"; "-Wold-style-definition"
+        ; "-Wredundant-decls"; "-Wnested-externs"; "-Wmissing-include-dirs" ]
+      in
+      List.iter add_flag debug_options
+  in
   let options =
     [ "UNIQUE_FIBERS" ]
   in
