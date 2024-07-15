@@ -3,6 +3,6 @@
  (targets tests.inc)
  (deps (:gen gen/testrules.exe))
  (mode promote)
- (action (run %{gen} -ocamlc %{ocamlc} -output %{targets})))
+ (action (run %{gen} -ocamlc %{ocamlc} -ocaml_version %{ocaml_version} -output %{targets})))
 
 (include tests.inc)

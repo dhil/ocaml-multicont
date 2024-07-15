@@ -43,72 +43,61 @@ let supervise : (unit -> unit) -> unit
     { suspended = []
     ; blocked = []
     ; finished = []
-    ; active = (Pid.zero, (fun () -> assert false))
+    ; active = (Pid.make 1, (fun () -> assert false))
     ; nextpid = 2 }
   in
-  let supervisor =
-    let open Effect.Deep in
-    { retc = (fun _ ->
-        let (pid, _) = state.active in
-        state.finished <- pid :: state.finished;
-        let rs, blocked =
-          match List.assoc_opt pid state.blocked with
-          | None -> [], state.blocked
-          | Some rs -> rs, List.remove_assoc pid state.blocked
-        in
-        match state.suspended @ rs with
-        | [] -> ()
-        | (pid, r) :: rs ->
-           state.suspended <- rs;
-           state.blocked <- blocked;
-           state.active <- (pid, r);
-           r ())
-    ; exnc = (fun e ->
-      match e with
-      | Fail ->
-         begin match state.suspended @ [state.active] with
-         | [] -> assert false
-         | (pid, r) :: rs ->
-            state.active <- (pid, r);
-            state.suspended <- rs;
-            r ()
-         end
-      | _ -> raise e)
-    ; effc = (fun (type a) (eff : a Effect.t) ->
-      match eff with
-      | Fork ->
-         Some (fun (k : (a, _) continuation) ->
-           let open Multicont.Deep in
-           let r = promote k in
-           let pid =
-             let i = state.nextpid in
-             state.nextpid <- i + 1;
-             Pid.make i
-           in
-           state.suspended <- state.suspended @ [pid, (fun () -> resume r Pid.zero)];
-           resume r pid)
-      | Join (pid : Pid.t) ->
-         Some (fun (k : (a, _) continuation) ->
-           let open Multicont.Deep in
-           let r = promote k in
-           if List.mem pid state.finished
-           then resume r ()
-           else let blocked =
-                  match List.assoc_opt pid state.blocked with
-                  | None -> (pid, [fst state.active, (fun () -> resume r ())]) :: state.blocked
-                  | Some _ -> state.blocked
-                in
-                state.blocked <- blocked;
-                match state.suspended with
-                | [] -> assert false
-                | (pid', r) :: rs ->
-                   state.active <- (pid', r);
-                   state.suspended <- rs;
-                   r ())
-      | _ -> None) }
-  in
-  state.active <- (Pid.make 1, (fun () -> Effect.Deep.match_with f () supervisor));
-  Effect.Deep.match_with f () supervisor
+  match f () with
+  | () ->
+     let (pid, _) = state.active in
+     state.finished <- pid :: state.finished;
+     let rs, blocked =
+       match List.assoc_opt pid state.blocked with
+       | None -> [], state.blocked
+       | Some rs -> rs, List.remove_assoc pid state.blocked
+     in
+     begin match state.suspended @ rs with
+     | [] -> ()
+     | (pid, r) :: rs ->
+        state.suspended <- rs;
+        state.blocked <- blocked;
+        state.active <- (pid, r);
+        r ()
+     end
+  | exception Fail ->
+     begin match state.suspended @ [state.active] with
+     | [] -> assert false
+     | (pid, r) :: rs ->
+        state.active <- (pid, r);
+        state.suspended <- rs;
+        r ()
+     end
+  | effect Fork, k ->
+     let open Multicont.Deep in
+     let r = promote k in
+     let pid =
+       let i = state.nextpid in
+       state.nextpid <- i + 1;
+       Pid.make i
+     in
+     state.suspended <- state.suspended @ [pid, (fun () -> resume r Pid.zero)];
+     resume r pid
+  | effect Join pid, k ->
+     let open Multicont.Deep in
+     let r = promote k in
+     if List.mem pid state.finished
+     then resume r ()
+     else let blocked =
+            match List.assoc_opt pid state.blocked with
+            | None -> (pid, [fst state.active, (fun () -> resume r ())]) :: state.blocked
+            | Some _ -> state.blocked
+          in
+          state.blocked <- blocked;
+          match state.suspended with
+          | [] -> assert false
+          | (pid', r) :: rs ->
+             state.active <- (pid', r);
+             state.suspended <- rs;
+             r ()
 
 let child : int -> int -> int ref -> unit
   = fun i n st ->

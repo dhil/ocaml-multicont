@@ -38,8 +38,9 @@ module Alg(D : sig type t end) : ALG with type t := D.t = struct
     | Apply -> return (f x)
     | Done ans -> ans
 
-  let toplevel : (unit -> t) -> t
-    = fun f ->
+  let htoplevel : unit -> (t, t) Effect.Deep.handler
+    = fun () ->
+    let open Effect.Deep in
     let open Multicont.Deep in
     let conts = ref [] in
     let backup ans =
@@ -52,13 +53,22 @@ module Alg(D : sig type t end) : ALG with type t := D.t = struct
     let push r =
       conts := r :: !conts
     in
-    match f () with
-    | ans -> ans
-    | exception Return ans -> backup ans
-    | effect Fork, k ->
-       let r = promote k in
-       push r;
-       resume r Apply
+    { retc = (fun ans -> ans)
+    ; exnc =
+        (function
+           Return ans -> backup ans
+         | e -> raise e)
+    ; effc = (fun (type a) (eff : a Effect.t) ->
+      match eff with
+      | Fork ->
+         Some (fun (k : (a, _) continuation) ->
+             let r = promote k in
+             push r;
+             resume r Apply)
+      | _ -> None) }
+
+  let toplevel f =
+    Effect.Deep.match_with f () (htoplevel ())
 end
 
 let fac n =

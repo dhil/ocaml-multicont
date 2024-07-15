@@ -2,6 +2,8 @@
   * McCarthy's locally angelic choice
   *)
 
+open Effect.Deep
+
 type 'a Effect.t += Choose : (unit -> 'a) list -> 'a Effect.t
 
 let amb : (unit -> 'a) list -> 'a
@@ -25,12 +27,20 @@ let handle : (unit -> 'a) -> 'a
   = fun m ->
   (* McCarthy's locally angelic choice operator (angelic modulo
      nontermination). *)
-  match m () with
-  | ans -> ans
-  | effect Choose xs, k ->
-     let open Multicont.Deep in
-     let r = promote k in
-     first_success (resume r) xs
+  let hamb =
+    { retc = (fun x -> x)
+    ; exnc = (fun e -> raise e)
+    ; effc = (fun (type b) (eff : b Effect.t) ->
+      match eff with
+      | Choose xs ->
+         Some
+           (fun (k : (b, _) continuation) ->
+             let open Multicont.Deep in
+             let r = promote k in
+             first_success (resume r) xs)
+      | _ -> None) }
+  in
+  match_with m () hamb
 
 (* The following examples are adapted from Oleg Kiselyov
    "Non-deterministic choice amb"

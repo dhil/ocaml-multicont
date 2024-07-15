@@ -17,15 +17,18 @@ let detect_native_compiler ocamlc =
     List.exists (fun s -> String.equal s "native_compiler: true") lines
   with _ -> false
 
-let make_diff_stanzas native testname =
+let make_diff_stanzas is_version_53 native testname =
   let stanzas exe_prefix =
     let output =
       Printf.sprintf
         "(rule\n\
          \ (with-stdout-to %s.output\n\
          \ (setenv \"LD_LIBRARY_PATH\" \".\"\n\
-         \   (run %s/examples/%s.exe))))"
-        exe_prefix "%{workspace_root}" exe_prefix
+         \   (run %s/examples/%s%s.exe))))"
+        exe_prefix
+        "%{workspace_root}"
+        (if is_version_53 then "" else "legacy/")
+        exe_prefix
     in
     let runtest =
       Printf.sprintf
@@ -73,15 +76,21 @@ let _ =
   in
   let incfile = ref "tests.inc" in
   let is_native_available = ref false in
+  let is_version_53 = ref false in
   C.main ~name:"tests"
     ~args:[
       "-ocamlc", Arg.String (fun ocamlc ->
                      is_native_available := detect_native_compiler ocamlc),
       "Name of the ocamlc executable";
+      "-ocaml_version", Arg.String (fun version ->
+                            is_version_53 := String.length version >= 3
+                                             && Char.compare (String.get version 0) '5' >= 0
+                                             && Char.compare (String.get version 2) '3' >= 0),
+      "OCaml version";
       "-output", Arg.String (fun s -> incfile := s),
       "Name for the tests sexp output (default tests.inc)"
     ]
     (fun _ ->
-      let diff_tests = List.map (make_diff_stanzas !is_native_available) diff_testnames in
+      let diff_tests = List.map (make_diff_stanzas !is_version_53 !is_native_available) diff_testnames in
       let nondiff_tests = List.map (make_nondiff_stanzas !is_native_available) nondiff_testnames in
       write_content !incfile (List.concat [List.concat diff_tests; List.concat nondiff_tests]))

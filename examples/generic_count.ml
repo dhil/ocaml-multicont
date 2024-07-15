@@ -1,7 +1,5 @@
 (* Generic counting example based on Hillerström et al. (2020) https://arxiv.org/abs/2007.00605 *)
 
-open Effect.Deep
-
 type _ Effect.t += Branch : bool Effect.t
 
 type point = int -> bool
@@ -16,21 +14,18 @@ let xor_predicate : int -> predicate
   | [] -> false
   | v :: vs -> List.fold_left xor v vs
 
-let generic_count : (bool, int) handler =
-  { retc = (fun x -> if x then 1 else 0)
-  ; exnc = (fun e -> raise e)
-  ; effc = (fun (type a) (eff : a Effect.t) ->
-    match eff with
-    | Branch ->
-       Some (fun (k : (a, _) continuation) ->
-           let open Multicont.Deep in
-           let r = promote k in
-           let tt = resume r true in
-           let ff = resume r false in
-           tt + ff)
-    | _ -> None) }
+let generic_count : ((int -> bool) -> bool) -> int
+  = fun f ->
+  match f (fun _ -> Effect.perform Branch) with
+  | ans -> if ans then 1 else 0
+  | effect Branch, k ->
+     let open Multicont.Deep in
+     let r = promote k in
+     let tt = resume r true in
+     let ff = resume r false in
+     tt + ff
 
 let _ =
   let n = try int_of_string Sys.argv.(1) with _ -> 8 in
-  let solutions = match_with (xor_predicate n) (fun _ -> Effect.perform Branch) generic_count in
+  let solutions = generic_count (xor_predicate n) in
   Printf.printf "%d\n" solutions

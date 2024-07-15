@@ -1,8 +1,9 @@
-# Compiling and running the examples
+# Compiling and running the legacy examples
 
-To compile and run the examples suite you must first have installed
-the library via OPAM. In order to build the suite simply invoke
-`dune`, i.e.
+The legacy examples do not make use of the effect handler syntax added
+in OCaml 5.3. To compile and run the examples suite you must first
+have installed the library via OPAM. In order to build the suite
+simply invoke `dune`, i.e.
 
 ```shell
 $ dune build
@@ -22,4 +23,3 @@ and for the bytecode version type
 ```shell
 $ dune exec ./nqueens.bc.exe
 ```
-

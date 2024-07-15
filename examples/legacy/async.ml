@@ -81,27 +81,31 @@ end = struct
       if Queue.is_empty st.suspended then ()
       else Queue.take st.suspended ()
 
-    let run : (unit -> unit) -> unit
-      = fun f ->
+    let hsched : unit -> (unit, unit) Effect.Deep.handler
+      = fun () ->
       let state = { suspended = Queue.create () } in
-      match f () with
-      | () -> ()
-      | exception End_of_strand -> run_next state
-      | effect Await pr, k ->
-         let open Effect.Deep in
-         (if Promise.is_done pr
-          then continue k (Promise.value pr)
-          else Promise.wait pr (fun v -> continue k v));
-         run_next state
-      | effect Fork, k ->
-         let open Multicont.Deep in
-         let r = promote k in
-         enqueue state (fun () -> resume r false);
-         resume r true
-      | effect Yield, k ->
-         let open Effect.Deep in
-         enqueue state (fun () -> continue k ());
-         run_next state
+      let open Effect.Deep in
+      { retc = (fun () -> run_next state)
+      ; exnc = (fun e ->
+        match e with
+        | End_of_strand -> run_next state
+        | e -> raise e)
+      ; effc = (fun (type a) (eff : a Effect.t) ->
+        match eff with
+        | Await pr -> Some (fun (k : (a, unit) continuation) ->
+          (if Promise.is_done pr
+           then continue k (Promise.value pr)
+           else Promise.wait pr (fun v -> continue k v));
+          run_next state)
+        | Fork -> Some (fun (k : (bool, unit) continuation) ->
+          let open Multicont.Deep in
+          let r = promote k in
+          enqueue state (fun () -> resume r false);
+          resume r true)
+        | Yield -> Some (fun (k : (unit, unit) continuation) ->
+          enqueue state (fun () -> continue k ());
+          run_next state)
+        | _ -> None) }
   end
 
   let run : (unit -> 'a) -> 'a
@@ -111,7 +115,7 @@ end = struct
       let v = f () in
       result := (fun () -> v)
     in
-    Scheduler.run f';
+    let () = Effect.Deep.match_with f' () (Scheduler.hsched ()) in
     !result ()
 end
 
@@ -124,9 +128,17 @@ module Env = struct
 
   let bind : int -> (unit -> 'b) -> 'b
     = fun v f ->
-    match f () with
-    | ans -> ans
-    | effect Ask, k -> Effect.Deep.continue k v
+    let open Effect.Deep in
+    let hdynbind : ('b, 'b) Effect.Deep.handler =
+      { retc = (fun x -> x)
+      ; exnc = (fun e -> raise e)
+      ; effc = (fun (type a) (eff : a Effect.t) ->
+        match eff with
+        | Ask -> Some (fun (k : (a, _) continuation) ->
+          continue k v)
+        | _ -> None) }
+    in
+    match_with f () hdynbind
 end
 
 (* The `well-behaveness' of this implementation can be illustrated by
