@@ -19,25 +19,28 @@ let detect_native_compiler ocamlc =
 
 let make_diff_stanzas is_version_53 native testname =
   let stanzas exe_prefix =
-    let output =
+    let output legacy =
       Printf.sprintf
         "(rule\n\
-         \ (with-stdout-to %s.output\n\
+         \ (with-stdout-to %s%s.output\n\
          \ (setenv \"LD_LIBRARY_PATH\" \".\"\n\
          \   (run %s/examples/%s%s.exe))))"
-        exe_prefix
-        "%{workspace_root}"
-        (if is_version_53 then "" else "legacy/")
-        exe_prefix
+        exe_prefix (if legacy then "-legacy" else "")
+        "%{workspace_root}" (if legacy then "legacy/" else "") exe_prefix
     in
-    let runtest =
+    let runtest legacy =
       Printf.sprintf
         "(rule\n\
          \ (alias runtest)\n\
-         \ (action (diff %s.expected %s.output)))"
-        testname exe_prefix
+         \ (action (diff %s.expected %s%s.output)))"
+        testname exe_prefix (if legacy then "-legacy" else "")
     in
-    [output; ""; runtest; ""]
+    let _53_tests =
+      if is_version_53
+      then [output false; ""; runtest false; ""]
+      else []
+    in
+    _53_tests @ [output true; ""; runtest true; ""]
   in
   let bc = stanzas (Printf.sprintf "%s.bc" testname) in
   let nc = if native then stanzas testname else [] in
