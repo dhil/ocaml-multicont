@@ -2,40 +2,47 @@
  (name nqueens)
  (modules nqueens)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
 (executable
  (name generic_count)
  (modules generic_count)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
 (executable
  (name choice)
  (modules choice)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
 (executable
  (name rollback)
  (modules rollback)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont unix))
 
 (executable
  (name supervised)
  (modules supervised)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
 (executable
  (name async)
  (modules async)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
 (executable
  (name return)
  (modules return)
  (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
