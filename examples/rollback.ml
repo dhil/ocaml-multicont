@@ -2,22 +2,27 @@
    c.f. https://arxiv.org/pdf/1611.09259.pdf *)
 
 module IO = struct
-  let term_io = Unix.(tcgetattr stdin)
+  let attrs = Unix.(tcgetattr stdin)
+  let buf = Bytes.create 1
+  (* Restore terminal defaults at exit. *)
+  let _ = at_exit (fun _ -> Unix.(tcsetattr stdin TCSAFLUSH attrs))
 
   let get_char () =
     (* Disable canonical processing and echoing of input
        characters. *)
-    Unix.(tcsetattr
-            stdin
-            TCSADRAIN
-            { term_io with c_icanon = false; c_echo = false });
-    let ch = input_char stdin in
-    (* Restore terminal defaults. *)
-    Unix.(tcsetattr stdin TCSADRAIN term_io);
-    ch
+    Unix.(tcsetattr stdin TCSAFLUSH
+            { attrs with c_icanon = false; c_echo = false; c_vmin = 1; c_vtime = 0 });
+    let len = Unix.(read stdin) buf 0 1 in
+    if len = 0 then raise End_of_file
+    else Bytes.get buf 0
 
   let put_char ch =
-    output_char stdout ch; flush stdout
+    Bytes.set buf 0 ch;
+    let len = Unix.(write stdout buf 0 1) in
+    if len = 0 then raise (Failure "write failed")
+
+  let backspace () =
+    put_char '\b'; put_char ' '; put_char '\b'
 end
 
 type _ Effect.t += Peek : (unit -> char) Effect.t (* Returning a thunk is necessary to avoid a memory leak. See below. *)
@@ -34,44 +39,40 @@ let accept : unit -> unit
 let abort : unit -> 'a
   = fun () -> raise Abort
 
-type 'a log = Start of (unit, 'a) Multicont.Shallow.resumption
-            | Inched of 'a log * ((unit -> char), 'a) Multicont.Shallow.resumption
-            | Ouched of 'a log
+type 'a log = Start of (unit -> 'a)
+            | Inched of 'a state * ((unit -> char), ('a state -> 'a)) Multicont.Deep.resumption
+            | Ouched of 'a state
+and 'a state = { log: 'a log; buf: char option }
 
-
-(* let identity : ('a, 'a) Effect.Shallow.handler
- *   = { retc = (fun x -> x)
- *     ; exnc = (fun e -> raise e)
- *     ; effc = (fun (type a) (_ : a Effect.t) -> None) } *)
-
-let rec input : 'a log -> char option -> ('a, 'a) Effect.Shallow.handler
-  = fun l buf ->
-  let open Effect.Shallow in
-  { retc = (fun x -> x)
-  ; exnc = (function Abort -> rollback l | e -> raise e)
-  ; effc = (fun (type a) (eff : a Effect.t) ->
-    match eff with
-    | Peek -> Some (fun (k : (a, _) continuation) ->
-                  let open Multicont.Shallow in
-                  let r = promote k in
-                  match buf with
-                  | Some c -> resume_with r (fun () -> c) (input l buf)
-                  | None -> match IO.get_char () with
-                            | '\b' -> rollback l
-                            | c -> resume_with r (fun () -> c) (input (Inched (l, r)) (Some c)))
-    | Accept -> Some (fun (k : (a, _) continuation) ->
-                    let open Multicont.Shallow in
-                    let r = promote k in
-                    match buf with
-                    | Some c -> IO.put_char c;
-                                resume_with r () (input (Ouched l) None)
-                    | None -> resume_with r () (input l None))
-    | _ -> None) }
-and rollback : 'a log -> 'a = function
-  | Start p -> parse p
-  | Ouched l -> IO.put_char '\b';
-                rollback l
-  | Inched (l, r) ->
+let rec input : (unit -> 'a) -> 'a state -> 'a
+  = fun f ->
+  match f () with
+    | ans -> (fun _ -> ans)
+    | exception Abort -> (fun st -> rollback st)
+    | effect Peek, k -> (fun st ->
+       let open Multicont.Deep in
+       let r = promote k in
+       match st.buf with
+       | Some c -> resume r (fun () -> c) st
+       | None -> match IO.get_char () with
+                 | '\b' -> IO.backspace (); rollback st
+                 | c -> let st' = { log = Inched (st, r); buf = Some c } in
+                        resume r (fun () -> c) st')
+    | effect Accept, k -> (fun st ->
+      let open Multicont.Deep in
+      let r = promote k in
+      match st.buf with
+      | Some c -> IO.put_char c;
+                  let st' = { log = Ouched st; buf = None } in
+                  resume r () st'
+      | None -> let st' = { st with buf = None } in
+                resume r () st')
+and rollback : 'a state -> 'a
+  = fun st ->
+  match st.log with
+  | Start f -> parse f
+  | Ouched st' -> rollback st'
+  | Inched (st', r) ->
      (* Here we want to inject a computation into the
         continuation. Specifically, we want to run the `peek`
         computation at the suspension point. For this reason the
@@ -79,12 +80,11 @@ and rollback : 'a log -> 'a = function
         char`. Alternatively, we could wrap the composition `peek ();
         resume_with r (Input l None)` in an identity handler. Though,
         this introduces to a memory leak.*)
-     let open Multicont.Shallow in
-     resume_with r peek (input l None)
-and parse : (unit, 'a) Multicont.Shallow.resumption -> 'a
-  = fun r ->
-  let open Multicont.Shallow in
-  resume_with r () (input (Start r) None)
+     let open Multicont.Deep in
+     resume r peek { st' with buf = None }
+and parse : (unit -> 'a) -> 'a
+  = fun f ->
+  input f { log = Start f; buf = None }
 
 let rec zeros : int -> int
   = fun n ->
@@ -94,9 +94,7 @@ let rec zeros : int -> int
   | _   -> abort ()
 
 let _t1 () =
-  let open Effect.Shallow in
-  let open Multicont.Shallow in
-  let i = parse (promote (fiber (fun () -> zeros 0))) in
+  let i = parse (fun () -> zeros 0) in
   Printf.printf "%d\n%!" i
 
 let rec nest : char list -> int -> char list
@@ -112,9 +110,7 @@ let rec nest : char list -> int -> char list
        | c   -> accept (); nest (c :: cs) n
 
 let t2 () =
-  let open Effect.Shallow in
-  let open Multicont.Shallow in
-  let cs = List.rev (parse (promote (fiber (fun () -> nest [] 0)))) in
+  let cs = List.rev (parse (fun () -> nest [] 0)) in
   Printf.printf "%s\n" (String.init (List.length cs) (fun i -> List.nth cs i))
 
 let _ = t2 ()
