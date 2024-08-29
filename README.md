@@ -62,7 +62,7 @@ $ make uninstall
 
 The primary reason to build from source is to toggle configurable
 options of this library, which are not readily available via OPAM
-install. Currently, there is only one optional build:
+install. Currently, there is only one configurable option:
 
 * `UNIQUE_FIBERS` (default: disabled): Since commit
 [ocaml/ocaml#e12b508](https://github.com/ocaml/ocaml/commit/e12b508876065723ed5fc35c0945030c9b7cd100)
