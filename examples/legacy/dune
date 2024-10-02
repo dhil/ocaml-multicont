@@ -39,3 +39,9 @@
  (modules return)
  (modes byte_complete native)
  (libraries multicont))
+
+(executable
+ (name tautology)
+ (modules tautology)
+ (modes byte_complete native)
+ (libraries multicont))
