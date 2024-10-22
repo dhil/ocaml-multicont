@@ -72,7 +72,7 @@ let make_nondiff_stanzas native testname : string list =
 
 let _ =
   let diff_testnames =
-    ["async"; "choice"; "generic_count"; "nqueens"; "return"; "supervised"; "tautology"]
+    ["async"; "choice"; "generic_count"; "knapsack"; "nqueens"; "return"; "supervised"; "tautology"]
   in
   let nondiff_testnames =
     ["unique_fibers"]

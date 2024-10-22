@@ -47,10 +47,17 @@
  (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
 
-
 (executable
  (name tautology)
  (modules tautology)
  (modes byte_complete native)
  (enabled_if (>= %{ocaml_version} "5.3.0"))
  (libraries multicont))
+
+(executable
+ (name knapsack)
+ (modules knapsack)
+ (modes byte_complete native)
+ (enabled_if (>= %{ocaml_version} "5.3.0"))
+ (libraries multicont))
+

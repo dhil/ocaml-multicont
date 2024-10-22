@@ -45,3 +45,9 @@
  (modules tautology)
  (modes byte_complete native)
  (libraries multicont))
+
+(executable
+ (name knapsack)
+ (modules knapsack)
+ (modes byte_complete native)
+ (libraries multicont))
