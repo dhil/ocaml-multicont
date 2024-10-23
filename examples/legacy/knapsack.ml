@@ -1,13 +1,16 @@
 (* Solving the knapsack problem with continuations *)
 
-type _ Effect.t += Pick : int * int -> bool Effect.t
+type response = Skip
+              | Take
+
+type _ Effect.t += Pick : int * int -> response Effect.t
 
 let pick i c = Effect.perform (Pick (i, c))
 
 let hmemo ps ws cap =
   let open Effect.Deep in
   let recall =
-    Array.init (Array.length ps) (fun _ -> Array.init cap (fun _ -> -1))
+    Array.make_matrix (Array.length ps) (cap+1) (-1)
   in
   { retc = (fun ans -> ans)
   ; exnc = raise
@@ -17,15 +20,16 @@ let hmemo ps ws cap =
        Some (fun (k : (a, _) continuation) ->
            let open Multicont.Deep in
            let r = promote k in
-           let payoff = recall.(i).(c - 1) in
+           let payoff = recall.(i).(c) in
            if payoff < 0
-           then if c - ws.(i) < 0
-                then (recall.(i).(c - 1) <- 0
-                     ; resume r false)
-                else let tt = resume r true in
-                     let ff = resume r false in
+           then if ws.(i) <= c
+                then let tt = ps.(i) + resume r Take in
+                     let ff = resume r Skip in
                      let ans = max tt ff in
-                     recall.(i).(c - 1) <- ans;
+                     recall.(i).(c) <- ans;
+                     ans
+                else let ans = resume r Skip in
+                     recall.(i).(c) <- ans;
                      ans
            else payoff)
     | _ -> None) }
@@ -36,12 +40,13 @@ let knapsack : int array -> int array -> int -> int
   = fun ps ws cap ->
   assert (Array.length ps = Array.length ws);
   assert (cap >= 0);
-  let rec solver c i n acc =
-    if i >= n || c <= 0 then acc
-    else if pick i c then solver (c - (Array.get ws i)) (i+1) n (Array.get ps i + acc)
-    else solver c (i+1) n acc
+  let rec solver i n c =
+    if i >= n || c <= 0 then 0
+    else match pick i c with
+         | Take -> solver (i + 1) n (c - ws.(i))
+         | Skip -> solver (i + 1) n c
   in
-  Effect.Deep.match_with (fun () -> solver cap 0 (Array.length ps) 0) () (hmemo ps ws cap)
+  Effect.Deep.match_with (fun () -> solver 0 (Array.length ps) cap) () (hmemo ps ws cap)
 
 let _ =
   let inputs =

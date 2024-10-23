@@ -1,6 +1,9 @@
 (* Solving the knapsack problem with continuations *)
 
-type _ Effect.t += Pick : int * int -> bool Effect.t
+type response = Skip
+              | Take
+
+type _ Effect.t += Pick : int * int -> response Effect.t
 
 let pick i c = Effect.perform (Pick (i, c))
 
@@ -11,49 +14,71 @@ let knapsack : int array -> int array -> int -> int
   assert (Array.length ps = Array.length ws);
   assert (cap >= 0);
   let recall =
-    Array.init (Array.length ps) (fun _ -> Array.init cap (fun _ -> -1))
+    Array.make_matrix (Array.length ps) (cap+1) (-1)
+    (*                                      ^ +1 here to make indexing slightly nicer, i.e. recall[i][c] rather than recall[i][c - 1]. *)
   in
   match
-    let rec solver c i n acc =
-      if i >= n || c <= 0 then acc
-      else if pick i c then solver (c - (Array.get ws i)) (i+1) n (Array.get ps i + acc)
-      else solver c (i+1) n acc
+    let rec solver i n c =
+      if i >= n || c <= 0 then 0
+      else match pick i c with
+           | Take -> solver (i + 1) n (c - ws.(i))
+           | Skip -> solver (i + 1) n c
     in
-    solver cap 0 (Array.length ps) 0
-    with
-    | ans -> ans
-    | effect Pick (i, c), k ->
-       let open Multicont.Deep in
-       let r = promote k in
-       let payoff = recall.(i).(c - 1) in
-       if payoff < 0
-       then if c - ws.(i) < 0
-            then (recall.(i).(c - 1) <- 0
-                 ; resume r false)
-            else let tt = resume r true in
-                 let ff = resume r false in
-                 let ans = max tt ff in
-                 recall.(i).(c - 1) <- ans;
-                 ans
-       else payoff
+    solver 0 (Array.length ps) cap
+  with
+  | ans -> ans
+  | effect Pick (i, c), k ->
+     let open Multicont.Deep in
+     let r = promote k in
+     let payoff = recall.(i).(c) in
+     if payoff < 0
+     then if ws.(i) <= c
+          then let tt = ps.(i) + resume r Take in
+               let ff = resume r Skip in
+               let ans = max tt ff in
+               recall.(i).(c) <- ans;
+               ans
+          else let ans = resume r Skip in
+               recall.(i).(c) <- ans;
+               ans
+     else payoff
 
 (** For comparison, a naive implementation with exponential time
     complexity. *)
 (* let knapsack_naive ps ws cap = *)
 (*   assert (Array.length ps = Array.length ws); *)
 (*   assert (cap >= 0); *)
-(*   (\* n - currently observed item *)
-(*      c - remaining capacity        *\) *)
 (*   let rec solver i n c = *)
 (*     if i >= n || c <= 0 then 0 *)
-(*     else *)
-(*       let w = ws.(i) in *)
-(*       if w > c *)
-(*       then solver (i+1) n c *)
-(*       else *)
-(*         let tt = ps.(i) + solver (i + 1) n (c - w) in *)
-(*         let ff = solver (i + 1) n c in *)
-(*         max tt ff *)
+(*     else if ws.(i) <= c *)
+(*          then let tt = ps.(i) + solver (i + 1) n (c - ws.(i)) in *)
+(*               let ff = solver (i + 1) n c in *)
+(*               max tt ff *)
+(*          else solver (i + 1) n c *)
+
+(*   in *)
+(*   solver 0 (Array.length ps) cap *)
+
+(** For comparison, a fast implementation without continuations. *)
+(* let knapsack_nocont ps ws cap = *)
+(*   assert (Array.length ps = Array.length ws); *)
+(*   assert (cap >= 0); *)
+(*   let recall = *)
+(*     Array.make_matrix (Array.length ps) (cap+1) (-1) *)
+(*   in *)
+(*   let rec solver i n c = *)
+(*     if i >= n || c <= 0 then 0 *)
+(*     else if recall.(i).(c) < 0 *)
+(*     then if ws.(i) <= c *)
+(*          then let tt = ps.(i) + solver (i + 1) n (c - ws.(i)) in *)
+(*               let ff = solver (i + 1) n c in *)
+(*               let ans = max tt ff in *)
+(*               recall.(i).(c) <- ans; *)
+(*               ans *)
+(*          else let ans = solver (i + 1) n c in *)
+(*               recall.(i).(c) <- solver (i + 1) n c; *)
+(*               ans *)
+(*     else recall.(i).(c) *)
 (*   in *)
 (*   solver 0 (Array.length ps) cap *)
 
@@ -68,4 +93,5 @@ let _ =
     ; ([| 360; 83; 59; 130; 431; 67; 230; 52; 93; 125; 670; 892; 600; 38; 48; 147; 78; 256; 63; 17; 120; 164; 432; 35; 92; 110; 22; 42; 50; 323; 514; 28; 87; 73; 78; 15; 26; 78; 210; 36; 85; 189; 274; 43; 33; 10; 19; 389; 276; 312|], [|7; 0; 30; 22; 80; 94; 11; 81; 70; 64; 59; 18; 0; 36; 3; 8; 15; 42; 9; 0; 42; 47; 52; 32; 26; 48; 55; 6; 29; 84; 2; 4; 18; 56; 7; 29; 93; 44; 71; 3; 86; 66; 31; 65; 0; 79; 20; 65; 52; 13|], 850) ]
   in
   List.iter (fun (ps, ws, c) -> print_endline (string_of_int (knapsack ps ws c))) inputs
+  (* List.iter (fun (ps, ws, c) -> print_endline (string_of_int (knapsack_nocont ps ws c))) inputs *)
   (* List.iter (fun (ps, ws, c) -> print_endline (string_of_int (knapsack_naive ps ws c))) inputs *)
