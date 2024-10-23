@@ -51,10 +51,9 @@ let knapsack : int array -> int array -> int -> int
 (*       if w > c *)
 (*       then solver (i+1) n c *)
 (*       else *)
-(*         let option1 = solver (i + 1) n c in *)
-(*         let pn = ps.(i) in *)
-(*         let option2 = pn + solver (i + 1) n (c - w) in *)
-(*         max option1 option2 *)
+(*         let tt = ps.(i) + solver (i + 1) n (c - w) in *)
+(*         let ff = solver (i + 1) n c in *)
+(*         max tt ff *)
 (*   in *)
 (*   solver 0 (Array.length ps) cap *)
 
