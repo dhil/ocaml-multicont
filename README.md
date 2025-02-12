@@ -320,7 +320,7 @@ let _ =
   | [[|true; false|]; [|true; false|]; [|false; false|]; [|false; false|]] -> ()
   | _ -> assert false
 (* We have four arrays, but only two of them are distinct (both
-   structurally and nominally). What about vectors of length 3? *)
+   structurally and referentially). What about vectors of length 3? *)
 let _ =
   match Effect.Deep.match_with init_vec 3 htwice with
   | [[|true; false; false|] ; [|true; false; false|] ; [|true; false; false|] ; [|true; false; false|];
@@ -375,8 +375,7 @@ let _ =
   match Effect.Deep.match_with init_vec' 1 htwice with
   | [[|false|]; [|false|]] -> ()
   | _ -> assert false
-(* Here the two arrays are nominally (i.e. they have the same identity)
-   equivalent. *)
+(* Here the two arrays are reference equal (i.e. they have the same identity). *)
 let _ =
   match Effect.Deep.match_with init_vec' 2 htwice with
   | [[|false; false|]; [|false; false|]; [|false; false|]; [|false; false|]] -> ()
