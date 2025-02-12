@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-22.04
-          - macos-14
+          - ubuntu-latest
+          - macos-latest
         ocaml-compiler:
           - 5.1.1
           - 5.2.0
@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext: false
@@ -48,6 +48,12 @@ jobs:
         run: |
           opam exec -- dune build @runtest
           opam exec -- dune build @runtest
+        shell: bash
+
+      - name: Clean & uninstall
+        run: |
+          opam exec -- dune uninstall
+          opam exec -- dune clean
         shell: bash
 
       - name: Rebuild library with UNIQUE_FIBERS
