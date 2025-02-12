@@ -306,7 +306,7 @@ let init_vec : int -> bool array
   Array.init n (fun _ -> Effect.perform Twice)
 
 (* The array backing the bit vector is imperative, thus one might
-   expect the interpreting `init_vec 1` with `htwice` to evaluate to
+   expect the interpretation of `init_vec 1` with `htwice` to evaluate to
    `[[|false|];[|false|]]`, where the two arrays have the same
    identity. Lets see what it evaluates to... *)
 let _ =
