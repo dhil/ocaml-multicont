@@ -41,10 +41,6 @@ library simply invoke the `all` rule, i.e.
 $ make all
 ```
 
-The Makefile also gives you more fine-grained control over what is
-being built. For example, you may only want to build either the byte
-code or native code compatible version of the library.
-
 To install the library built from source simply invoke the `install`
 rule:
 
