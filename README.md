@@ -201,29 +201,17 @@ conversion, e.g.
 
 ```ocaml
 (* An illustration of how the heap to stack optimisation is broken.
- * This example is adapted from de Vilhena and Pottier (2021).
+ * This example is adapted from de Vilhena and Pottier (2021) to OCaml 5.3.0.
  * file: heap2stack.ml
  * compile: ocamlopt -I $(opam var lib)/multicont multicont.cmxa heap2stack.ml
  * run: ./a.out *)
 
-(* We first require a little bit of setup. The following declares an
-   operation `Twice' which we use to implement multiple returns. *)
+(* We first declare an operation `Twice' which we use to implement
+   multiple returns. *)
 type _ Effect.t += Twice : unit Effect.t
 
-(* The handler `htwice' interprets `Twice' by simply invoking its
-   continuation twice. *)
-let htwice : (unit, unit) Effect.Deep.handler
-  = { retc = (fun x -> x)
-    ; exnc = (fun e -> raise e)
-    ; effc = (fun (type a) (eff : a Effect.t) ->
-      let open Effect.Deep in
-      match eff with
-      | Twice -> Some (fun (k : (a, _) continuation) ->
-         continue (Multicont.Deep.clone_continuation k) ();
-         continue k ())
-      | _ -> None) }
-
-(* Now for the interesting stuff. In the code below, the compiler will
+(* In the code below, we interpret `Twice` by cloning its continuation
+   and invoking it twice. In the match expression, the compiler will
    perform an escape analysis on the reference `i' and deduce that it
    does not escape the local scope, because it is unaware of the
    semantics of `perform Twice', hence the optimiser will transform
@@ -231,14 +219,17 @@ let htwice : (unit, unit) Effect.Deep.handler
    consequence, the assertion `(!i = 1)' will succeed twice, whereas
    it should fail after the second return of `perform Twice'. *)
 let heap2stack () =
-  Effect.Deep.match_with
-    (fun () ->
-      let i = ref 0 in
-      Effect.perform Twice;
-      i := !i + 1;
-      Printf.printf "i = %d\n%!" !i;
-      assert (!i = 1))
-    () htwice
+  match
+    let i = ref 0 in
+    Effect.perform Twice;
+    i := !i + 1;
+    Printf.printf "i = %d\n%!" !i;
+    assert (!i = 1)
+  with
+  | x -> x
+  | effect Twice, k ->
+     Effect.Deep.continue (Multicont.Deep.clone_continuation k) ();
+     Effect.Deep.continue k ()
 
 (* The following does not trigger an assertion failure. *)
 let _ = heap2stack ()
@@ -248,14 +239,17 @@ let _ = heap2stack ()
    in general, as we may not have access to the client code that
    allocates the reference! *)
 let heap2stack' () =
-  Effect.Deep.match_with
-    (fun () ->
-      let i = Sys.opaque_identity (ref 0) in
-      Effect.perform Twice;
-      i := !i + 1;
-      Printf.printf "i = %d\n%!" !i;
-      assert (!i = 1))
-    () htwice
+  match
+    let i = Sys.opaque_identity (ref 0) in
+    Effect.perform Twice;
+    i := !i + 1;
+    Printf.printf "i = %d\n%!" !i;
+    assert (!i = 1)
+  with
+  | x -> x
+  | effect Twice, k ->
+     Effect.Deep.continue (Multicont.Deep.clone_continuation k) ();
+     Effect.Deep.continue k ()
 
 (* The following triggers an assertion failure. *)
 let _ = heap2stack' ()
@@ -276,7 +270,7 @@ example.
 
 ```ocaml
 (* An illustration of how effect ordering is observable with
- * multi-shot continuations (OCaml 5.1.1).
+ * multi-shot continuations (OCaml 5.3.0).
  * file: efford.ml
  * compile: ocamlopt -I $(opam var lib)/multicont multicont.cmxa efford.ml
  * run: ./a.out  *)
@@ -285,19 +279,16 @@ example.
    operation `Twice' which we use to implement multiple returns. *)
 type _ Effect.t += Twice : bool Effect.t
 
-(* The handler `htwice' interprets `Twice' by enumerating the possible
+(* The handler `all' interprets `Twice' by enumerating the possible
    outcomes of its continuation. *)
-let htwice : 'a. ('a, 'a list) Effect.Deep.handler
-  = { retc = (fun x -> [x])
-    ; exnc = (fun e -> raise e)
-    ; effc = (fun (type a) (eff : a Effect.t) ->
-      let open Effect.Deep in
-      match eff with
-      | Twice -> Some (fun (k : (a, _) continuation) ->
-          let xs = continue (Multicont.Deep.clone_continuation k) true in
-          let ys = continue k false in
-          xs @ ys)
-      | _ -> None) }
+let all : 'a. (unit -> 'a) -> 'a list
+  = fun f ->
+  match f () with
+  | x -> [x]
+  | effect Twice, k ->
+     let xs = Effect.Deep.continue (Multicont.Deep.clone_continuation k) true in
+     let ys = Effect.Deep.continue k false in
+     xs @ ys
 
 (* This function uses the `Twice` operation to initialise a bit vector
    of length `n`. *)
@@ -310,19 +301,19 @@ let init_vec : int -> bool array
    `[[|false|];[|false|]]`, where the two arrays have the same
    identity. Lets see what it evaluates to... *)
 let _ =
-  match Effect.Deep.match_with init_vec 1 htwice with
+  match all (fun () -> init_vec 1) with
   | [[|true|]; [|false|]] -> ()
   | _ -> assert false
 (* We get two distinct arrays. Lets see what happens if we initialise
    a vector of length 2: *)
 let _ =
-  match Effect.Deep.match_with init_vec 2 htwice with
+  match all (fun () -> init_vec 2) with
   | [[|true; false|]; [|true; false|]; [|false; false|]; [|false; false|]] -> ()
   | _ -> assert false
 (* We have four arrays, but only two of them are distinct (both
    structurally and referentially). What about vectors of length 3? *)
 let _ =
-  match Effect.Deep.match_with init_vec 3 htwice with
+  match all (fun () -> init_vec 3) with
   | [[|true; false; false|] ; [|true; false; false|] ; [|true; false; false|] ; [|true; false; false|];
      [|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|]] -> ()
   | _ -> assert false
@@ -372,16 +363,16 @@ let init_vec' : int -> bool array
 
 (* Lets rerun the examples from before. *)
 let _ =
-  match Effect.Deep.match_with init_vec' 1 htwice with
+  match all (fun () -> init_vec' 1) with
   | [[|false|]; [|false|]] -> ()
   | _ -> assert false
 (* Here the two arrays are reference equal (i.e. they have the same identity). *)
 let _ =
-  match Effect.Deep.match_with init_vec' 2 htwice with
+  match all (fun () -> init_vec' 2) with
   | [[|false; false|]; [|false; false|]; [|false; false|]; [|false; false|]] -> ()
   | _ -> assert false
 let _ =
-  match Effect.Deep.match_with init_vec' 3 htwice with
+  match all (fun () -> init_vec' 3) with
   | [[|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|];
      [|false; false; false|]; [|false; false; false|]; [|false; false; false|]; [|false; false; false|]] -> ()
   | _ -> assert false
