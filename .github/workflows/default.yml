@@ -50,6 +50,12 @@ jobs:
           opam exec -- dune build @runtest
         shell: bash
 
+      - name: Clean & uninstall
+        run: |
+          opam exec -- dune uninstall
+          opam exec -- dune clean
+        shell: bash
+
       - name: Rebuild library with UNIQUE_FIBERS
         run: |
           opam exec -- dune build
