@@ -385,7 +385,7 @@ single-shot continuations or exceptions.
 
 ## Notes on the implementation
 
-Under the hood the library uses regular linear OCaml continuation and
+Under the hood the library uses the regular linear OCaml continuation and
 a variation of `clone_continuation` that used to reside in the `Obj`
 module of earlier versions of Multicore OCaml. Internally, the
 `resumption` types are aliases of the respective `continuation` types
@@ -397,7 +397,7 @@ the resulting clone rather than the original continuation. The library
 guarantees that the original continuation remains cloneable as the
 call `promote k` deattaches the stack embedded in the continuation
 object `k`, meaning that the programmer cannot inadvertently destroy
-the stack by a call to `continue`.
+the stack via a call to `continue`.
 
 ## Acknowledgements
 
